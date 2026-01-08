@@ -32,15 +32,16 @@ export const ELECTRICITY_RATES: StateElectricity[] = [
 ];
 
 export const REGIONS: RegionData[] = [
-  { fips: "36047", name: "Kings County", state: "NY", dailyMiles: 15.489 },
-  { fips: "36005", name: "Bronx County", state: "NY", dailyMiles: 16.595 },
-  { fips: "36061", name: "New York County", state: "NY", dailyMiles: 12.888 },
-  { fips: "36081", name: "Queens County", state: "NY", dailyMiles: 20.332 },
-  { fips: "06075", name: "San Francisco County", state: "CA", dailyMiles: 24.816 },
-  { fips: "48113", name: "Dallas County", state: "TX", dailyMiles: 39.961 },
-  { fips: "12086", name: "Miami-Dade County", state: "FL", dailyMiles: 31.553 },
-  { fips: "11001", name: "District of Columbia", state: "DC", dailyMiles: 21.494 },
-  { fips: "17031", name: "Cook County", state: "IL", dailyMiles: 30.205 },
-  { fips: "53033", name: "King County", state: "WA", dailyMiles: 36.591 },
-  { fips: "13121", name: "Fulton County", state: "GA", dailyMiles: 38.452 }
+  { fips: "36047", name: "Kings County (Brooklyn)", state: "NY", dailyMiles: 15.4 },
+  { fips: "36005", name: "Bronx County", state: "NY", dailyMiles: 16.5 },
+  { fips: "36061", name: "New York County (Manhattan)", state: "NY", dailyMiles: 12.8 },
+  { fips: "36081", name: "Queens County", state: "NY", dailyMiles: 20.3 },
+  { fips: "06075", name: "San Francisco County", state: "CA", dailyMiles: 24.8 },
+  { fips: "06037", name: "Los Angeles County", state: "CA", dailyMiles: 32.2 },
+  { fips: "48113", name: "Dallas County", state: "TX", dailyMiles: 39.9 },
+  { fips: "48201", name: "Harris County (Houston)", state: "TX", dailyMiles: 42.5 },
+  { fips: "12086", name: "Miami-Dade County", state: "FL", dailyMiles: 31.5 },
+  { fips: "17031", name: "Cook County (Chicago)", state: "IL", dailyMiles: 30.2 },
+  { fips: "53033", name: "King County (Seattle)", state: "WA", dailyMiles: 36.5 },
+  { fips: "13121", name: "Fulton County (Atlanta)", state: "GA", dailyMiles: 38.4 }
 ];

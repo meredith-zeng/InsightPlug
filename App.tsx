@@ -17,6 +17,7 @@ const App: React.FC = () => {
     evPrice: 45000,
     taxIncentive: 7500,
     annualMileage: 12000,
+    dailyMiles: REGIONS[0].dailyMiles, // Initialize with regional average
     electricRate: 0.15,
     evEfficiency: 3.5,
     maintenanceSavingPerYear: 800,

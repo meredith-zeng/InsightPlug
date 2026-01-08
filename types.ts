@@ -9,28 +9,28 @@ export interface EVModel {
 
 export interface RegionData {
   fips: string;
-  name: string;
+  name: string; // The County name
   state: string;
   dailyMiles: number;
 }
 
 export interface StateElectricity {
   state: string;
-  pricePerKwh: number; // in dollars, e.g., 0.15
+  pricePerKwh: number; // in dollars
 }
 
 export interface UserProfile {
   region: RegionData;
   ev: EVModel;
-  homeChargingRatio: number; // 0 to 1
+  homeChargingRatio: number;
   ownershipYears: number;
   gasPrice: number;
   iceMpg: number;
   icePrice: number;
   evPrice: number;
   taxIncentive: number;
-  // Added missing fields to resolve TS errors in components and constants
   annualMileage: number;
+  dailyMiles: number;
   electricRate: number;
   evEfficiency: number;
   maintenanceSavingPerYear: number;
@@ -42,17 +42,17 @@ export interface ChatMessage {
   content: string;
 }
 
-// Added missing interfaces for AnalysisDashboard
-export interface CostDataPoint {
-  year: number;
-  iceTotal: number;
-  evTotal: number;
-  savings: number;
-}
-
 export interface AISummary {
   totalSavings: number;
   breakEvenYear: number;
   keyInsights: string[];
   recommendation: string;
+}
+
+// Added missing CostDataPoint interface for the AnalysisDashboard component
+export interface CostDataPoint {
+  year: number;
+  iceTotal: number;
+  evTotal: number;
+  savings: number;
 }

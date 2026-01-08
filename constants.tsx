@@ -9,6 +9,8 @@ export const DEFAULT_PROFILE: UserProfile = {
   ev: EV_MODELS[0],
   homeChargingRatio: 0.8,
   annualMileage: 12000,
+  // Fix: Added missing dailyMiles property required by UserProfile interface
+  dailyMiles: REGIONS[0].dailyMiles,
   gasPrice: 3.50,
   electricRate: 0.15,
   ownershipYears: 10,
