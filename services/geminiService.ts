@@ -4,21 +4,24 @@ import { UserProfile, AISummary } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-export const startChatSession = (profile: UserProfile) => {
-  const priceGap = profile.evPrice - profile.icePrice - profile.taxIncentive;
-  
+export const startResearchChat = (profile: UserProfile) => {
   const systemInstruction = `
-    You are an EV Life Consultant specializing in Geographic Grounding and Economic Behavioral Science.
+    You are the InsightPlug Reasoning Engine, a decision-support tool designed to support consumer economic reasoning.
     
-    Current Capabilities: You have access to Google Maps grounding tools to find real charging infrastructure and facilities in ${profile.region.name} (${profile.region.state}).
-    
-    Communication Strategy:
-    1. **Geographic Grounding**: If the user is concerned about charging, use your tools to identify and describe real public charging clusters in their specific area.
-    2. **Behavioral De-biasing**: Address the "Economic Mirage" by shifting the focus from the initial sticker price to the "Prepaid Discounted Energy" logic of EVs.
-    3. **Contextual Relevance**: Use the fact that the user drives ${profile.dailyMiles} miles daily in ${profile.region.name} to ground your financial advice.
-    4. **Charging Access**: They have ${profile.homeChargingRatio * 100}% home charging access. Emphasize how this makes charging an "invisible utility" rather than a chore.
-    
-    Tone: Authoritative, localized, reassuring, and data-driven.
+    THEORETICAL FRAMEWORK:
+    - Ground all responses in Becker's (1965) Household Production Theory.
+    - Treat the EV as a Capital Asset mediating Money and Time constraints.
+    - Your goal is to dismantle "Economic Mirages"—biased beliefs about EV affordability.
+
+    REASONING PROTOCOL:
+    1. **Money (Allocative Efficiency)**: Analyze "Daily Asset Utilization." If the user consumes only ${((profile.dailyMiles / profile.ev.epaRange) * 100).toFixed(1)}% of their battery daily, explain that their capital is "over-provisioned," reframing Range Anxiety as an efficiency surplus.
+    2. **Money (Liquidity)**: Focus on "Monthly Surplus." Reframe long-term savings as immediate disposable income recovered from fuel loss.
+    3. **Time (Shadow Costs)**: Address the "Time-Intensive Bias." Use their "Charging Interval" (charging every ${Math.floor(profile.ev.epaRange / profile.dailyMiles)} days) to prove that refueling labor is infrequent and efficient.
+
+    CONSTRAINTS:
+    - Do not make purchase recommendations.
+    - Function as a semantic bridge translating signals into narratives.
+    - Use Google Maps to find specific local context in ${profile.region.name} if spatial grounding is requested.
   `;
   
   return ai.chats.create({
@@ -30,13 +33,12 @@ export const startChatSession = (profile: UserProfile) => {
   });
 };
 
-export const startResearchChat = startChatSession;
+export const startChatSession = startResearchChat;
 
 export const getGeminiSummary = async (profile: UserProfile): Promise<AISummary> => {
-  const priceGap = profile.evPrice - profile.icePrice - profile.taxIncentive;
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: `User is in ${profile.region.name}. They perceive an upfront cost premium of $${priceGap} and are concerned about charging infrastructure. Using map data, explain why this investment is empirically sound for their specific location and driving habits (${profile.dailyMiles} miles/day).`,
+    contents: `Translate these signals into an economic narrative for a driver in ${profile.region.name}: Daily Asset Utilization of ${((profile.dailyMiles / profile.ev.epaRange) * 100).toFixed(1)}% and a Charging Interval of ${Math.floor(profile.ev.epaRange / profile.dailyMiles)} days.`,
     config: {
       tools: [{ googleMaps: {} }],
       responseMimeType: "application/json",

@@ -1,8 +1,7 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { UserProfile, ChatMessage } from '../types';
-import { EV_MODELS, REGIONS, ELECTRICITY_RATES } from '../services/dataCatalog';
+import { REGIONS, EV_MODELS, ELECTRICITY_RATES } from '../services/dataCatalog';
 import { startResearchChat } from '../services/geminiService';
 import { Icons } from '../constants';
 import { marked } from 'marked';
@@ -14,88 +13,55 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
   const [chatSession, setChatSession] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const calculateZoom = (miles: number) => {
-    if (miles <= 5) return 14;
-    if (miles <= 10) return 13;
-    if (miles <= 20) return 12;
-    if (miles <= 40) return 11;
-    if (miles <= 80) return 10;
-    return 9;
-  };
+  const PUBLIC_RATE_MULTIPLIER = 2.5;
 
-  const dynamicZoom = useMemo(() => calculateZoom(profile.dailyMiles), [profile.dailyMiles]);
-  const freeMapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(profile.region.name + ', ' + profile.region.state)}&t=&z=${dynamicZoom}&ie=UTF8&iwloc=&output=embed`;
-
-  const metrics = useMemo(() => {
+  const calculateMetrics = useMemo(() => {
     const milesPerMonth = profile.dailyMiles * 30.4;
-    const gasCost = Math.round((milesPerMonth / profile.iceMpg) * profile.gasPrice);
-    const stateRate = ELECTRICITY_RATES.find(r => r.state === profile.region.state)?.pricePerKwh || 0.15;
-    const effectiveEvRate = (profile.homeChargingRatio * stateRate) + ((1 - profile.homeChargingRatio) * 0.45);
-    const electricCost = Math.round((milesPerMonth / profile.evEfficiency) * effectiveEvRate);
+    const legacyCost = Math.round((milesPerMonth / profile.iceMpg) * profile.gasPrice);
     
-    const monthlySaving = (gasCost + 80) - (electricCost + 20); 
-    const priceGap = profile.evPrice - profile.icePrice - profile.taxIncentive;
-    const yearsToBreakEven = priceGap / (monthlySaving * 12);
-    const tenYearSaving = (monthlySaving * 12 * 10) - priceGap;
+    const stateRate = ELECTRICITY_RATES.find(r => r.state === profile.region.state)?.pricePerKwh || 0.15;
+    const blendedEvRate = (profile.homeChargingRatio * stateRate) + ((1 - profile.homeChargingRatio) * (stateRate * PUBLIC_RATE_MULTIPLIER));
+    const efficientCost = Math.round((milesPerMonth / profile.evEfficiency) * blendedEvRate);
+    
+    const monthlySurplus = legacyCost - efficientCost;
+    const dailyAssetUtilization = (profile.dailyMiles / profile.ev.epaRange) * 100;
+    const interval = Math.floor(profile.ev.epaRange / profile.dailyMiles);
 
     return {
-      chartData: [
-        { name: 'ICE Cost', value: gasCost + 80, type: 'ice' },
-        { name: 'EV Cost', value: electricCost + 20, type: 'ev' }
-      ],
-      monthlySaving: Math.round(monthlySaving),
-      electricCost,
-      gasCost,
-      priceGap: Math.max(0, priceGap),
-      yearsToBreakEven: yearsToBreakEven.toFixed(1),
-      tenYearSaving: Math.round(tenYearSaving)
+      legacyCost,
+      efficientCost,
+      monthlySurplus,
+      dailyAssetUtilization: Math.min(100, dailyAssetUtilization),
+      interval: Math.max(1, interval)
     };
   }, [profile]);
 
-  const batteryUsagePct = Math.min(100, (profile.dailyMiles / profile.ev.epaRange) * 100);
-  const daysOfRange = Math.floor(profile.ev.epaRange / profile.dailyMiles);
-
-  const GUIDED_FAQS = [
-    { label: "Is public charging accessible?", query: `Show me the public charging density in ${profile.region.name} based on the map view.` },
-    { label: "How is the ROI calculated?", query: "Can you break down the break-even math considering local electricity rates?" },
-    { label: "What about long distance?", query: "I occasionally travel outside this map view. How does the range hold up for longer trips?" }
-  ];
+  const mapUrl = useMemo(() => {
+    const zoom = profile.dailyMiles <= 20 ? 12 : 11;
+    return `https://maps.google.com/maps?q=${encodeURIComponent(profile.region.name + ', ' + profile.region.state)}&t=&z=${zoom}&ie=UTF8&iwloc=&output=embed`;
+  }, [profile.region, profile.dailyMiles]);
 
   useEffect(() => {
     const session = startResearchChat(profile);
     setChatSession(session);
     
     const welcome = `
-### 📍 Geographic Anchor: ${profile.region.name}
-I have calibrated the map scale (Zoom: ${dynamicZoom}) to represent your daily activity radius of **${profile.dailyMiles} miles**.
+**EV ECO EXPERT ONLINE**
+I've analyzed your mobility constraints:
+*   **Time Gain**: Refuel every **${calculateMetrics.interval} days**.
+*   **Cash Flow**: Recapture **$${calculateMetrics.monthlySurplus}** monthly.
+*   **Asset Use**: **${calculateMetrics.dailyAssetUtilization.toFixed(1)}%** daily utilization.
 
-**Your Personalized Grounding:**
-- **Spatial Context**: The visible map area covers your primary daily driving reach.
-- **Energy Perspective**: In ${profile.region.name}, a gas vehicle "leaks" cash across this map. With an EV, you only consume **${batteryUsagePct.toFixed(1)}%** of your battery capacity to cover this entire visible terrain.
-- **Charging Profile**: With **${profile.homeChargingRatio * 100}%** home charging access, your "invisible fuel station" is already operational.
-
-Would you like to see specific charging hubs within this visible radius?
+How can I help you optimize further?
     `;
     setMessages([{ role: 'model', content: welcome }]);
-  }, [profile.region.fips, profile.ev.model, profile.dailyMiles, dynamicZoom, profile.homeChargingRatio]);
+  }, [profile.region.fips, profile.ev.model, profile.dailyMiles]);
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [messages, isTyping]);
-
-  const updateRegion = (fips: string) => {
-    const region = REGIONS.find(r => r.fips === fips)!;
-    setProfile({ ...profile, region, dailyMiles: region.dailyMiles, annualMileage: region.dailyMiles * 365 });
-  };
-
-  const updateDailyMiles = (val: string) => {
-    const miles = Math.max(0, parseFloat(val) || 0);
-    setProfile({ ...profile, dailyMiles: miles, annualMileage: miles * 365 });
-  };
-
-  const updateHomeRatio = (val: string) => {
-    setProfile({ ...profile, homeChargingRatio: parseFloat(val) / 100 });
-  };
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isTyping) return;
@@ -118,266 +84,283 @@ Would you like to see specific charging hubs within this visible radius?
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="flex gap-6 h-full w-full overflow-hidden items-stretch">
       
-      {/* LEFT: CONTROLS & MAP */}
-      <div className="lg:col-span-3 space-y-6">
-        
-        {/* LIFE DYNAMICS CARD */}
-        <div className="glass p-6 rounded-[32px] space-y-6 shadow-sm border-slate-200/40">
-          <header className="flex items-center gap-2">
-            <div className="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
-            <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Life Dynamics</h4>
-          </header>
-          
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-[10px] font-extrabold text-slate-400 uppercase">Primary Region</label>
-              <select 
-                value={profile.region.fips}
-                onChange={(e) => updateRegion(e.target.value)}
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-emerald-500 outline-none transition-all cursor-pointer"
-              >
-                {REGIONS.map(r => <option key={r.fips} value={r.fips}>{r.name} ({r.state})</option>)}
-              </select>
-            </div>
+      {/* COLUMN 1: CONFIGURATION (Left Sidebar) */}
+      <aside className="w-[280px] glass rounded-[32px] p-6 flex flex-col gap-6 shrink-0 border-slate-200/50">
+        <header className="flex items-center gap-3 shrink-0">
+          <div className="w-1 h-5 bg-slate-900 rounded-full"></div>
+          <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Configuration</h2>
+        </header>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-extrabold text-slate-400 uppercase">Daily Commute (Miles)</label>
-              <div className="relative">
-                <input 
-                  type="number" value={profile.dailyMiles}
-                  onChange={(e) => updateDailyMiles(e.target.value)}
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-emerald-500 outline-none transition-all"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-300 uppercase">MILES</span>
-              </div>
-            </div>
+        <div className="flex-1 space-y-4 overflow-y-auto chat-scroll pr-1">
+          <section className="space-y-1.5">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Geographic Anchor</label>
+            <select 
+              value={profile.region.fips}
+              onChange={(e) => {
+                const r = REGIONS.find(reg => reg.fips === e.target.value)!;
+                setProfile({ ...profile, region: r, dailyMiles: r.dailyMiles });
+              }}
+              className="w-full bg-slate-50 border border-slate-200/60 rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-emerald-500 outline-none transition-all cursor-pointer"
+            >
+              {REGIONS.map(r => <option key={r.fips} value={r.fips}>{r.name}</option>)}
+            </select>
+          </section>
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase">Home Charging Ratio</label>
-                <span className="text-[11px] font-black text-emerald-600">{Math.round(profile.homeChargingRatio * 100)}%</span>
-              </div>
+          <section className="space-y-1.5">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Vehicle Profile</label>
+            <select 
+              value={profile.ev.model}
+              onChange={(e) => {
+                const m = EV_MODELS.find(ev => ev.model === e.target.value)!;
+                setProfile({ ...profile, ev: m });
+              }}
+              className="w-full bg-slate-50 border border-slate-200/60 rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-emerald-500 outline-none transition-all cursor-pointer"
+            >
+              {EV_MODELS.map(ev => <option key={ev.model} value={ev.model}>{ev.label}</option>)}
+            </select>
+          </section>
+
+          <div className="grid grid-cols-2 gap-3">
+            <section className="space-y-1">
+              <label className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Efficiency</label>
               <input 
-                type="range" min="0" max="100" 
-                value={profile.homeChargingRatio * 100}
-                onChange={(e) => updateHomeRatio(e.target.value)}
-                className="w-full accent-emerald-500 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                type="number" value={profile.evEfficiency}
+                onChange={e => setProfile({...profile, evEfficiency: parseFloat(e.target.value) || 0})}
+                className="w-full bg-slate-50 border border-slate-200/60 rounded-lg p-2.5 text-xs font-bold outline-none"
               />
-              <div className="flex justify-between text-[9px] font-bold text-slate-400 uppercase">
-                <span>Public only</span>
-                <span>Home prioritized</span>
+            </section>
+            <section className="space-y-1">
+              <label className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Battery</label>
+              <input 
+                type="number" value={profile.ev.batteryCapacity}
+                readOnly
+                className="w-full bg-slate-100 border border-slate-200/60 rounded-lg p-2.5 text-xs font-bold outline-none text-slate-400"
+              />
+            </section>
+          </div>
+
+          <section className="space-y-1.5">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Daily Travel (mi)</label>
+            <input 
+              type="number" value={profile.dailyMiles}
+              onChange={e => setProfile({...profile, dailyMiles: parseFloat(e.target.value) || 0})}
+              className="w-full bg-slate-50 border border-slate-200/60 rounded-xl p-4 text-sm font-bold focus:ring-1 focus:ring-emerald-500 outline-none transition-all shadow-sm"
+            />
+          </section>
+
+          <section className="space-y-3 pt-3 border-t border-slate-100">
+            <div className="flex justify-between items-center">
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Home Charging</label>
+              <span className="text-[10px] font-black text-emerald-600">{Math.round(profile.homeChargingRatio * 100)}%</span>
+            </div>
+            <input 
+              type="range" min="0" max="100" value={profile.homeChargingRatio * 100}
+              onChange={e => setProfile({...profile, homeChargingRatio: parseFloat(e.target.value) / 100})}
+              className="w-full accent-emerald-500 h-1 bg-slate-100 rounded-full appearance-none cursor-pointer"
+            />
+          </section>
+        </div>
+
+        <div className="shrink-0 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+          <div className="flex items-center gap-2 mb-2">
+            <Icons.Info size={12} className="text-slate-400" />
+            <span className="text-[9px] font-black text-slate-900 uppercase tracking-widest">Logic Insight</span>
+          </div>
+          <p className="text-[8px] text-slate-400 leading-normal">
+            Money Signal = [Legacy Cost] - [Blended EV Cost].<br/>
+            Legacy: (Miles / MPG) * Gas Price<br/>
+            Blended: Efficiency * (Home Rate% + Public Rate% * {PUBLIC_RATE_MULTIPLIER})
+          </p>
+        </div>
+      </aside>
+
+      {/* COLUMN 2: MAIN SIGNALS (Center Stack) */}
+      <main className="flex-1 grid grid-rows-[auto_1fr_auto] gap-4 h-full overflow-hidden">
+        
+        {/* ROW 1: MONTHLY SURPLUS */}
+        <div className="bg-white rounded-[32px] p-6 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col gap-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-0.5">Money Signal: Monthly Surplus</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight leading-none">Immediate Disposable Income Recovery</p>
+            </div>
+            <div className="text-right">
+              <span className="text-5xl font-black text-emerald-500 tracking-tighter leading-none">+${calculateMetrics.monthlySurplus}</span>
+              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-0.5">Available / Mo</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 rounded-[20px] bg-slate-50 border border-slate-100 text-center flex flex-col justify-center">
+              <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5 tracking-widest">Legacy Liquidity Flow</span>
+              <span className="text-2xl font-black text-slate-900">${calculateMetrics.legacyCost}</span>
+            </div>
+            <div className="p-4 rounded-[20px] bg-emerald-50/50 border border-emerald-100 text-center flex flex-col justify-center">
+              <span className="text-[9px] font-black text-emerald-600 uppercase mb-0.5 tracking-widest">Efficient Liquidity Flow</span>
+              <span className="text-2xl font-black text-emerald-500">${calculateMetrics.efficientCost}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 2: ASSET UTILIZATION & MAP (Expanding Area) */}
+        <div className="grid grid-cols-2 gap-4 min-h-0">
+          {/* Asset Card */}
+          <div className="bg-white rounded-[32px] p-6 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col overflow-hidden">
+            <header className="mb-2">
+              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-0.5">Money Signal: Daily Asset Utilization</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Proportion of Capital Consumed per Cycle</p>
+            </header>
+            
+            <div className="flex-1 flex flex-col justify-center">
+              <div className="mb-3 flex items-baseline">
+                <span className="text-6xl font-black text-slate-900 tracking-tighter leading-none">{calculateMetrics.dailyAssetUtilization.toFixed(1)}</span>
+                <span className="text-2xl text-slate-200 ml-2 font-black">%</span>
+              </div>
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-500 rounded-full transition-all duration-1000" 
+                  style={{ width: `${calculateMetrics.dailyAssetUtilization}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <p className="mt-3 text-[10px] font-medium text-slate-500 leading-relaxed italic">
+              Surfacing the share of battery capacity used vs. <span className="text-blue-600 font-black tracking-tight underline decoration-blue-200 underline-offset-2">Over-provisioned Capital.</span>
+            </p>
+          </div>
+
+          {/* Map Card */}
+          <div className="bg-white rounded-[32px] p-6 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col overflow-hidden">
+            <header className="mb-2">
+              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-0.5">Active Mobility Zone</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Spatial Reach</p>
+            </header>
+            <div className="flex-1 rounded-2xl overflow-hidden relative bg-slate-50 border border-slate-100">
+              <iframe 
+                key={mapUrl}
+                width="100%" height="100%" 
+                style={{ border: 0 }} 
+                src={mapUrl}
+                loading="lazy"
+              ></iframe>
+              <div className="absolute inset-0 pointer-events-none border-[6px] border-white/50 rounded-2xl"></div>
+              <div className="absolute top-2 left-2 right-2 text-center">
+                <span className="bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[8px] font-black text-emerald-600 shadow-sm border border-emerald-50/50 uppercase tracking-widest">
+                  {profile.dailyMiles} MI Life Circle
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* PERSONALIZED GEOGRAPHIC REACH MAP */}
-        <div className="glass rounded-[32px] overflow-hidden shadow-sm border-slate-200/40 flex flex-col bg-white transition-all duration-500">
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-             <div className="flex flex-col">
-               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Geospatial Reach</span>
-               <span className="text-[11px] font-extrabold text-slate-900">{profile.dailyMiles} mi Radius</span>
-             </div>
-             <div className="px-2 py-1 bg-blue-100 rounded-md">
-               <span className="text-[8px] font-black text-blue-700 uppercase">Scale Context Active</span>
-             </div>
-          </div>
-          <div className="h-52 w-full relative group">
-            <iframe
-              key={freeMapUrl}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              loading="lazy"
-              allowFullScreen
-              src={freeMapUrl}
-            ></iframe>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-               <div className="w-24 h-24 border-2 border-blue-500/20 rounded-full bg-blue-500/5 animate-pulse"></div>
-            </div>
-          </div>
-          <div className="p-4 bg-slate-900 text-white">
-             <div className="space-y-2">
-               <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">Trip Cost within this area</p>
-               <div className="flex items-center justify-between">
-                 <span className="text-sm font-black text-white">Approx. $${(metrics.electricCost / 30).toFixed(2)} EV</span>
-                 <span className="text-[9px] font-bold text-emerald-400 uppercase">75% CHEAPER THAN GAS</span>
-               </div>
-             </div>
-          </div>
-        </div>
-
-        {/* ROI PROJECTION CARD */}
-        <div className="p-6 rounded-[32px] bg-white border-2 border-slate-100 shadow-xl space-y-5 relative overflow-hidden">
-           <div className="relative z-10">
-             <div className="flex items-center gap-2 mb-4">
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Break-even Horizon</span>
-             </div>
-             <div className="space-y-1">
-               <div className="text-4xl font-black text-slate-900">{metrics.yearsToBreakEven} Years</div>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">to full capital recovery</p>
-             </div>
-             <div className="mt-6 pt-6 border-t border-slate-100 space-y-3">
-               <div className="flex justify-between items-center">
-                 <span className="text-[10px] text-slate-400 font-bold uppercase">10-Year Net Gain</span>
-                 <span className="text-sm font-black text-emerald-600">${metrics.tenYearSaving.toLocaleString()}</span>
-               </div>
-             </div>
-           </div>
-        </div>
-      </div>
-
-      {/* CENTER: ANALYSIS LABS */}
-      <div className="lg:col-span-6 space-y-6">
-        {/* LAB 1: COST COMPARISON */}
-        <div className="glass p-8 rounded-[40px] shadow-sm border-slate-200/60">
-          <header className="flex justify-between items-center mb-8">
+        {/* ROW 3: REFUELING SCHEDULE */}
+        <div className="bg-white rounded-[32px] p-6 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col overflow-hidden">
+          <div className="flex justify-between items-center mb-4 shrink-0">
             <div>
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Monthly Energy Expenditure</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Localized to ${profile.region.state} Utility Tariffs</p>
+              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-0.5">Refueling Schedule</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">30-Day Labor Cycle</p>
             </div>
-          </header>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-             <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={metrics.chartData} margin={{ left: -20 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" hide />
-                    <YAxis hide />
-                    <Tooltip 
-                      cursor={{fill: 'transparent'}} 
-                      contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                      formatter={(val) => [`$${val}/month`, '']}
-                    />
-                    <Bar dataKey="value" radius={[12, 12, 0, 0]} barSize={50}>
-                      {metrics.chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.type === 'ice' ? '#94a3b8' : '#10b981'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-             </div>
-             <div className="space-y-5">
-                <div className="p-5 rounded-3xl bg-slate-50 border border-slate-100">
-                   <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Monthly Surplus</p>
-                   <div className="flex items-baseline gap-2">
-                     <span className="text-3xl font-black text-slate-900">${metrics.monthlySaving}</span>
-                     <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Retained Assets</span>
-                   </div>
-                </div>
-                <p className="text-[12px] text-slate-500 leading-relaxed font-medium">
-                  In **${profile.region.name}**, gasoline is a recurrent capital loss. Electricity, managed at home, converts that loss into predictable savings.
-                </p>
-             </div>
-          </div>
-        </div>
-
-        {/* LAB 2: RANGE REALITY */}
-        <div className="glass p-8 rounded-[40px] shadow-sm border-slate-200/60">
-          <header className="flex justify-between items-center mb-8">
-            <div>
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Range Grounding: Daily Reach</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Operationalized for ${profile.dailyMiles} miles/day</p>
+            <div className="text-right">
+              <span className="text-xl font-black text-slate-900">Every {calculateMetrics.interval} Days</span>
+              <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-0.5">Automated Frequency</p>
             </div>
-          </header>
-
-          <div className="space-y-8">
-             <div className="relative h-16 bg-slate-100 rounded-2xl overflow-hidden border-2 border-white shadow-inner">
-                <div 
-                  className="absolute left-0 top-0 h-full bg-blue-500 transition-all duration-1000 flex items-center justify-center shadow-lg"
-                  style={{ width: `${batteryUsagePct}%` }}
-                >
-                  <span className="text-[10px] font-black text-white px-3">Daily Burn</span>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-end px-4">
-                  <span className="text-[11px] font-black text-blue-600 uppercase bg-white/80 px-2 py-1 rounded-lg">
-                    REMAINING {(100-batteryUsagePct).toFixed(0)}%
-                  </span>
-                </div>
-             </div>
-
-             <div className="grid grid-cols-3 gap-6">
-                <div className="text-center p-5 rounded-3xl bg-slate-50 border border-slate-100">
-                   <div className="text-2xl font-black text-slate-900">{batteryUsagePct.toFixed(1)}%</div>
-                   <div className="text-[9px] font-bold text-slate-400 uppercase mt-1">Daily Drain</div>
-                </div>
-                <div className="text-center p-5 rounded-3xl bg-slate-50 border border-slate-100">
-                   <div className="text-2xl font-black text-slate-900">{daysOfRange} Days</div>
-                   <div className="text-[9px] font-bold text-slate-400 uppercase mt-1">Cycle Duration</div>
-                </div>
-                <div className="text-center p-5 rounded-3xl bg-blue-50 border border-blue-100">
-                   <div className="text-2xl font-black text-blue-600">{profile.ev.epaRange}mi</div>
-                   <div className="text-[9px] font-bold text-blue-400 uppercase mt-1">Full Range</div>
-                </div>
-             </div>
-             
-             <p className="text-[12px] text-slate-500 text-center font-bold px-6 italic leading-relaxed">
-               "Range anxiety is a psychological barrier. For your commute in ${profile.region.name}, you are empirically safe with over **${(100-batteryUsagePct).toFixed(0)}%** buffer daily."
-             </p>
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT: AI ASSISTANT */}
-      <div className="lg:col-span-3 flex flex-col gap-6">
-        <div className="glass rounded-[32px] shadow-sm flex flex-col h-[700px] border-slate-200/60 overflow-hidden bg-white/40">
-          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white/80">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Regional Expert</span>
-              <span className="text-[8px] font-bold text-slate-400 uppercase">Contextual Grounding Active</span>
-            </div>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           </div>
           
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-6 chat-scroll">
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[95%] p-4 rounded-3xl text-[13.5px] shadow-sm leading-relaxed ${
-                  m.role === 'user' 
-                    ? 'bg-slate-900 text-white rounded-tr-none' 
-                    : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
-                }`}>
-                  {m.role === 'model' ? (
-                    <div className="prose prose-slate max-w-none prose-sm" dangerouslySetInnerHTML={{ __html: marked.parse(m.content) }} />
-                  ) : (
-                    <span className="font-semibold">{m.content}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-            {isTyping && <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse pl-2">Analyzing spatial data...</div>}
-            
-            {!isTyping && (
-              <div className="pt-4 flex flex-col gap-2.5">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Localized Queries:</p>
-                {GUIDED_FAQS.map((faq, i) => (
-                  <button 
-                    key={i}
-                    onClick={() => sendMessage(faq.query)}
-                    className="text-[11.5px] font-bold text-slate-700 bg-white border border-slate-200 px-4 py-3 rounded-2xl hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all text-left shadow-sm"
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <div className="grid grid-cols-7 gap-1.5 w-full">
+              {Array.from({ length: 28 }).map((_, i) => {
+                const day = i + 1;
+                const isRefuel = day % calculateMetrics.interval === 1;
+                return (
+                  <div 
+                    key={day} 
+                    className={`aspect-square rounded-xl flex items-center justify-center relative transition-all duration-300 ${
+                      isRefuel 
+                      ? 'bg-slate-900 text-white shadow-md' 
+                      : 'bg-slate-50/50 text-slate-300 border border-slate-100/50'
+                    }`}
                   >
-                    {faq.label}
-                  </button>
-                ))}
-              </div>
-            )}
+                    <span className="text-[10px] font-bold">{day}</span>
+                    {isRefuel && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-emerald-400 rounded-full ring-1 ring-slate-900"></div>}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); sendMessage(chatInput); }} className="p-4 bg-white border-t border-slate-100 flex gap-2">
-            <input 
-              value={chatInput} onChange={e => setChatInput(e.target.value)}
-              placeholder="Ask about local charging hubs..."
-              className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-xs focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
-            />
-            <button disabled={isTyping} className="bg-slate-900 text-white p-3 rounded-2xl hover:bg-black transition-colors">
-              <Icons.Send size={18} />
-            </button>
-          </form>
+          <div className="flex justify-center gap-10 pt-4 mt-2 border-t border-slate-50 shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="w-3.5 h-3.5 rounded bg-slate-900"></div>
+              <span className="text-[9px] font-black text-slate-900 uppercase tracking-widest">{Math.ceil(28/calculateMetrics.interval)} Refuels</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3.5 h-3.5 rounded bg-emerald-50 border border-emerald-100"></div>
+              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">{28 - Math.ceil(28/calculateMetrics.interval)} Passive Days</span>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
+
+      {/* COLUMN 3: LLM EXPERT (Right Sidebar) */}
+      <aside className="w-[380px] bg-slate-900 rounded-[40px] shadow-2xl flex flex-col overflow-hidden shrink-0 border border-white/5">
+        <header className="p-8 border-b border-white/5 flex items-center gap-4 bg-slate-900/50 shrink-0">
+          <div className="w-12 h-12 rounded-full border border-emerald-500/20 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
+              <Icons.Zap size={16} fill="currentColor" />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-white font-black text-lg uppercase tracking-widest leading-none">EV Eco Expert</h2>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Active reasoning</span>
+            </div>
+          </div>
+        </header>
+
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 chat-scroll bg-transparent">
+          {messages.map((m, i) => (
+            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[90%] p-5 rounded-[24px] shadow-sm text-xs leading-relaxed ${
+                m.role === 'user' 
+                  ? 'bg-white/10 text-white rounded-tr-none border border-white/10 font-bold' 
+                  : 'bg-white/5 text-slate-300 border border-white/5 rounded-tl-none font-medium'
+              }`}>
+                {m.role === 'model' ? (
+                  <div className="prose prose-invert prose-sm max-w-none text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: marked.parse(m.content) }} />
+                ) : (
+                  <span>{m.content}</span>
+                )}
+              </div>
+            </div>
+          ))}
+          {isTyping && <div className="text-[9px] font-black text-emerald-500/50 uppercase animate-pulse flex items-center gap-2 pl-2 tracking-widest">Expert Thinking...</div>}
+        </div>
+
+        <div className="px-8 pb-3 flex flex-wrap gap-2 shrink-0">
+          {['5-year savings?', 'Home charging impact?', 'Battery capacity?'].map(p => (
+            <button 
+              key={p} onClick={() => sendMessage(p)}
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white border border-white/5 rounded-full text-[9px] font-bold transition-all"
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={e => { e.preventDefault(); sendMessage(chatInput); }} className="p-8 bg-slate-900 border-t border-white/5 flex gap-3 shrink-0">
+          <input 
+            value={chatInput} onChange={e => setChatInput(e.target.value)}
+            placeholder="Question the trade-offs..."
+            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xs text-white focus:border-emerald-500 outline-none transition-all placeholder:text-slate-700 font-bold"
+          />
+          <button disabled={isTyping} className="bg-emerald-500 text-slate-900 p-4 rounded-2xl hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/10 shrink-0">
+            <Icons.Send size={22} />
+          </button>
+        </form>
+      </aside>
     </div>
   );
 };
