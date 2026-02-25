@@ -5,26 +5,27 @@ import { EV_MODELS, REGIONS } from './services/dataCatalog';
 import SimulationLab from './components/SimulationLab';
 
 const App: React.FC = () => {
+  const defaultEV = EV_MODELS[0];
   const [profile, setProfile] = useState<UserProfile>({
     region: REGIONS[0],
-    ev: EV_MODELS[0],
+    ev: defaultEV,
     homeChargingRatio: 0.75,
     ownershipYears: 10,
-    gasPrice: 3.50,
-    iceMpg: 28,
-    icePrice: 32000,
-    evPrice: 45000,
-    taxIncentive: 7500,
-    annualMileage: 12000,
+    gasPrice: 3.45, // Updated to 2026 average
+    iceMpg: defaultEV.iceBenchmark?.mpg || 28,
+    icePrice: defaultEV.iceBenchmark?.price || 32000,
+    evPrice: defaultEV.msrp,
+    taxIncentive: 7500, // Federal tax credit (may vary)
+    annualMileage: REGIONS[0].dailyMiles * 365,
     dailyMiles: REGIONS[0].dailyMiles,
-    electricRate: 0.15,
-    evEfficiency: 3.5,
-    maintenanceSavingPerYear: 800,
+    electricRate: 0.1789, // Updated to 2026 national average
+    evEfficiency: 3.8, // kWh/mile for modern EVs
+    maintenanceSavingPerYear: 500, // EV maintenance savings vs ICE
     homeChargingAccess: true
   });
 
   return (
-    <div className="h-screen flex flex-col bg-[#f8fafc] overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-[#f8fafc] overflow-hidden">
       <nav className="z-50 py-6 shrink-0">
         <div className="max-w-[1700px] mx-auto w-full px-12 flex justify-between items-center">
           <div className="flex items-center gap-4">

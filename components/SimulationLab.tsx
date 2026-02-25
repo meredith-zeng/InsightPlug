@@ -5,6 +5,7 @@ import { REGIONS, EV_MODELS, ELECTRICITY_RATES } from '../services/dataCatalog';
 import { startResearchChat } from '../services/geminiService';
 import { Icons } from '../constants';
 import { marked } from 'marked';
+import ResultsPanel from './ResultsPanel';
 
 const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfile) => void }> = ({ profile, setProfile }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -17,9 +18,13 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
 
   const calculateMetrics = useMemo(() => {
     const milesPerMonth = profile.dailyMiles * 30.4;
+    const annualMiles = profile.dailyMiles * 365;
+
+    // Monthly fuel costs
     const legacyCost = Math.round((milesPerMonth / profile.iceMpg) * profile.gasPrice);
     
-    const stateRate = ELECTRICITY_RATES.find(r => r.state === profile.region.state)?.pricePerKwh || 0.15;
+    // EV operating costs
+    const stateRate = ELECTRICITY_RATES.find(r => r.state === profile.region.state)?.pricePerKwh || 0.1789;
     const blendedEvRate = (profile.homeChargingRatio * stateRate) + ((1 - profile.homeChargingRatio) * (stateRate * PUBLIC_RATE_MULTIPLIER));
     const efficientCost = Math.round((milesPerMonth / profile.evEfficiency) * blendedEvRate);
     
@@ -27,19 +32,39 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
     const dailyAssetUtilization = (profile.dailyMiles / profile.ev.epaRange) * 100;
     const interval = Math.floor(profile.ev.epaRange / profile.dailyMiles);
 
+    // TCO Calculation (5-year ownership)
+    const ownershipYears = 5;
+    const annualFuelCost = legacyCost * 12;
+    const annualEvEnergyCost = efficientCost * 12;
+    const annualDepreciation = profile.icePrice * 0.15; // Assume 15% annual depreciation
+    const annualEvDepreciation = profile.evPrice * 0.10; // EV depreciation slightly lower
+
+    const totalIceCost = (profile.icePrice) + (annualFuelCost * ownershipYears) +
+                         (annualDepreciation * ownershipYears) +
+                         (profile.maintenanceSavingPerYear * 3 * ownershipYears); // 3x maintenance for ICE
+
+    const totalEvCost = (profile.evPrice - profile.taxIncentive) + (annualEvEnergyCost * ownershipYears) +
+                        (annualEvDepreciation * ownershipYears) +
+                        (profile.maintenanceSavingPerYear * ownershipYears);
+
+    const tcoSavings = totalIceCost - totalEvCost;
+    const breakEvenMiles = (profile.icePrice - (profile.evPrice - profile.taxIncentive)) /
+                          ((profile.gasPrice / profile.iceMpg) - (blendedEvRate / profile.evEfficiency));
+
     return {
       legacyCost,
       efficientCost,
       monthlySurplus,
       dailyAssetUtilization: Math.min(100, dailyAssetUtilization),
-      interval: Math.max(1, interval)
+      interval: Math.max(1, interval),
+      tcoSavings: Math.round(tcoSavings),
+      breakEvenMiles: Math.round(breakEvenMiles),
+      totalIceCost: Math.round(totalIceCost),
+      totalEvCost: Math.round(totalEvCost),
     };
   }, [profile]);
 
-  const mapUrl = useMemo(() => {
-    const zoom = profile.dailyMiles <= 20 ? 12 : 11;
-    return `https://maps.google.com/maps?q=${encodeURIComponent(profile.region.name + ', ' + profile.region.state)}&t=&z=${zoom}&ie=UTF8&iwloc=&output=embed`;
-  }, [profile.region, profile.dailyMiles]);
+
 
   useEffect(() => {
     const session = startResearchChat(profile);
@@ -114,7 +139,13 @@ How can I help you optimize further?
               value={profile.ev.model}
               onChange={(e) => {
                 const m = EV_MODELS.find(ev => ev.model === e.target.value)!;
-                setProfile({ ...profile, ev: m });
+                setProfile({
+                  ...profile,
+                  ev: m,
+                  evPrice: m.msrp,
+                  iceMpg: m.iceBenchmark?.mpg || 28,
+                  icePrice: m.iceBenchmark?.price || 32000,
+                });
               }}
               className="w-full bg-slate-50 border border-slate-200/60 rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-emerald-500 outline-none transition-all cursor-pointer"
             >
@@ -161,6 +192,25 @@ How can I help you optimize further?
               className="w-full accent-emerald-500 h-1 bg-slate-100 rounded-full appearance-none cursor-pointer"
             />
           </section>
+
+          <section className="space-y-2 pt-3 border-t border-slate-100">
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-3">Vehicle Pricing (2026)</div>
+            <div className="space-y-2">
+              <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
+                <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">EV MSRP</div>
+                <div className="text-lg font-black text-emerald-600">${profile.evPrice.toLocaleString()}</div>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">Benchmark ICE</div>
+                <div className="text-lg font-black text-slate-900">${profile.icePrice.toLocaleString()}</div>
+                <div className="text-[8px] text-slate-400 mt-1">{profile.ev.iceBenchmark?.model || 'N/A'}</div>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">Price Premium</div>
+                <div className="text-lg font-black text-blue-600">${(profile.evPrice - profile.icePrice).toLocaleString()}</div>
+              </div>
+            </div>
+          </section>
         </div>
 
         <div className="shrink-0 p-4 rounded-2xl bg-slate-50 border border-slate-100">
@@ -177,131 +227,14 @@ How can I help you optimize further?
       </aside>
 
       {/* COLUMN 2: MAIN SIGNALS (Center Stack) */}
-      <main className="flex-1 grid grid-rows-[auto_1fr_auto] gap-4 h-full overflow-hidden">
-        
-        {/* ROW 1: MONTHLY SURPLUS */}
-        <div className="bg-white rounded-[32px] p-6 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col gap-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-0.5">Money Signal: Monthly Surplus</h3>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight leading-none">Immediate Disposable Income Recovery</p>
-            </div>
-            <div className="text-right">
-              <span className="text-5xl font-black text-emerald-500 tracking-tighter leading-none">+${calculateMetrics.monthlySurplus}</span>
-              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-0.5">Available / Mo</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-[20px] bg-slate-50 border border-slate-100 text-center flex flex-col justify-center">
-              <span className="text-[9px] font-black text-slate-400 uppercase mb-0.5 tracking-widest">Legacy Liquidity Flow</span>
-              <span className="text-2xl font-black text-slate-900">${calculateMetrics.legacyCost}</span>
-            </div>
-            <div className="p-4 rounded-[20px] bg-emerald-50/50 border border-emerald-100 text-center flex flex-col justify-center">
-              <span className="text-[9px] font-black text-emerald-600 uppercase mb-0.5 tracking-widest">Efficient Liquidity Flow</span>
-              <span className="text-2xl font-black text-emerald-500">${calculateMetrics.efficientCost}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ROW 2: ASSET UTILIZATION & MAP (Expanding Area) */}
-        <div className="grid grid-cols-2 gap-4 min-h-0">
-          {/* Asset Card */}
-          <div className="bg-white rounded-[32px] p-6 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col overflow-hidden">
-            <header className="mb-2">
-              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-0.5">Money Signal: Daily Asset Utilization</h3>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Proportion of Capital Consumed per Cycle</p>
-            </header>
-            
-            <div className="flex-1 flex flex-col justify-center">
-              <div className="mb-3 flex items-baseline">
-                <span className="text-6xl font-black text-slate-900 tracking-tighter leading-none">{calculateMetrics.dailyAssetUtilization.toFixed(1)}</span>
-                <span className="text-2xl text-slate-200 ml-2 font-black">%</span>
-              </div>
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-500 rounded-full transition-all duration-1000" 
-                  style={{ width: `${calculateMetrics.dailyAssetUtilization}%` }}
-                ></div>
-              </div>
-            </div>
-
-            <p className="mt-3 text-[10px] font-medium text-slate-500 leading-relaxed italic">
-              Surfacing the share of battery capacity used vs. <span className="text-blue-600 font-black tracking-tight underline decoration-blue-200 underline-offset-2">Over-provisioned Capital.</span>
-            </p>
-          </div>
-
-          {/* Map Card */}
-          <div className="bg-white rounded-[32px] p-6 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col overflow-hidden">
-            <header className="mb-2">
-              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-0.5">Active Mobility Zone</h3>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Spatial Reach</p>
-            </header>
-            <div className="flex-1 rounded-2xl overflow-hidden relative bg-slate-50 border border-slate-100">
-              <iframe 
-                key={mapUrl}
-                width="100%" height="100%" 
-                style={{ border: 0 }} 
-                src={mapUrl}
-                loading="lazy"
-              ></iframe>
-              <div className="absolute inset-0 pointer-events-none border-[6px] border-white/50 rounded-2xl"></div>
-              <div className="absolute top-2 left-2 right-2 text-center">
-                <span className="bg-white/95 backdrop-blur px-3 py-1 rounded-full text-[8px] font-black text-emerald-600 shadow-sm border border-emerald-50/50 uppercase tracking-widest">
-                  {profile.dailyMiles} MI Life Circle
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ROW 3: REFUELING SCHEDULE */}
-        <div className="bg-white rounded-[32px] p-6 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col overflow-hidden">
-          <div className="flex justify-between items-center mb-4 shrink-0">
-            <div>
-              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-0.5">Refueling Schedule</h3>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">30-Day Labor Cycle</p>
-            </div>
-            <div className="text-right">
-              <span className="text-xl font-black text-slate-900">Every {calculateMetrics.interval} Days</span>
-              <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-0.5">Automated Frequency</p>
-            </div>
-          </div>
-          
-          <div className="flex-1 min-h-0 flex items-center justify-center">
-            <div className="grid grid-cols-7 gap-1.5 w-full">
-              {Array.from({ length: 28 }).map((_, i) => {
-                const day = i + 1;
-                const isRefuel = day % calculateMetrics.interval === 1;
-                return (
-                  <div 
-                    key={day} 
-                    className={`aspect-square rounded-xl flex items-center justify-center relative transition-all duration-300 ${
-                      isRefuel 
-                      ? 'bg-slate-900 text-white shadow-md' 
-                      : 'bg-slate-50/50 text-slate-300 border border-slate-100/50'
-                    }`}
-                  >
-                    <span className="text-[10px] font-bold">{day}</span>
-                    {isRefuel && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-emerald-400 rounded-full ring-1 ring-slate-900"></div>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex justify-center gap-10 pt-4 mt-2 border-t border-slate-50 shrink-0">
-            <div className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 rounded bg-slate-900"></div>
-              <span className="text-[9px] font-black text-slate-900 uppercase tracking-widest">{Math.ceil(28/calculateMetrics.interval)} Refuels</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 rounded bg-emerald-50 border border-emerald-100"></div>
-              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">{28 - Math.ceil(28/calculateMetrics.interval)} Passive Days</span>
-            </div>
-          </div>
-        </div>
-      </main>
+      <ResultsPanel
+        profile={profile}
+        legacyCost={calculateMetrics.legacyCost}
+        efficientCost={calculateMetrics.efficientCost}
+        monthlySurplus={calculateMetrics.monthlySurplus}
+        dailyAssetUtilization={calculateMetrics.dailyAssetUtilization}
+        interval={calculateMetrics.interval}
+      />
 
       {/* COLUMN 3: LLM EXPERT (Right Sidebar) */}
       <aside className="w-[380px] bg-slate-900 rounded-[40px] shadow-2xl flex flex-col overflow-hidden shrink-0 border border-white/5">

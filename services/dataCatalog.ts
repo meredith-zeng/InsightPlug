@@ -2,13 +2,86 @@
 import { EVModel, RegionData, StateElectricity } from '../types';
 
 export const EV_MODELS: EVModel[] = [
-  { make: "Tesla", model: "Model 3 RWD", batteryCapacity: 60.5, epaRange: 267, label: "Tesla Model 3 RWD" },
-  { make: "Ford", model: "Mustang Mach-E", batteryCapacity: 70, epaRange: 300, label: "Ford Mustang Mach-E" },
-  { make: "Chevrolet", model: "Bolt EV", batteryCapacity: 60, epaRange: 259, label: "Chevrolet Bolt EV" },
-  { make: "Hyundai", model: "IONIQ 5", batteryCapacity: 77.4, epaRange: 303, label: "Hyundai IONIQ 5" },
-  { make: "Nissan", model: "LEAF", batteryCapacity: 40, epaRange: 149, label: "Nissan LEAF (40kWh)" },
-  { make: "Rivian", model: "R1S", batteryCapacity: 135, epaRange: 295, label: "Rivian R1S" },
-  { make: "Lucid", model: "Air", batteryCapacity: 118, epaRange: 516, label: "Lucid Air" },
+  {
+    make: "Tesla", model: "Model 3 RWD", batteryCapacity: 60, epaRange: 272, label: "Tesla Model 3 RWD (2026)",
+    msrp: 42990,
+    iceBenchmark: { model: "Honda Civic/Toyota Corolla", price: 28000, mpg: 33 }
+  },
+  {
+    make: "Tesla", model: "Model Y RWD", batteryCapacity: 75, epaRange: 260, label: "Tesla Model Y RWD (2026)",
+    msrp: 46990,
+    iceBenchmark: { model: "Honda CR-V/Toyota RAV4", price: 32000, mpg: 28 }
+  },
+  {
+    make: "Chevrolet", model: "Bolt EV", batteryCapacity: 65, epaRange: 259, label: "Chevrolet Bolt EV (2026)",
+    msrp: 28200,
+    iceBenchmark: { model: "Honda Civic", price: 28000, mpg: 33 }
+  },
+  {
+    make: "Chevrolet", model: "Bolt EUV", batteryCapacity: 65, epaRange: 247, label: "Chevrolet Bolt EUV (2026)",
+    msrp: 31200,
+    iceBenchmark: { model: "Honda HR-V", price: 30000, mpg: 31 }
+  },
+  {
+    make: "Ford", model: "Mustang Mach-E RWD", batteryCapacity: 70, epaRange: 312, label: "Ford Mustang Mach-E RWD (2026)",
+    msrp: 42900,
+    iceBenchmark: { model: "Ford Escape/Toyota RAV4", price: 34000, mpg: 27 }
+  },
+  {
+    make: "Ford", model: "F-150 Lightning Pro", batteryCapacity: 131, epaRange: 240, label: "Ford F-150 Lightning Pro (2026)",
+    msrp: 56995,
+    iceBenchmark: { model: "Ford F-150 EcoBoost", price: 38000, mpg: 21 }
+  },
+  {
+    make: "Hyundai", model: "IONIQ 6 SE RWD", batteryCapacity: 53, epaRange: 361, label: "Hyundai IONIQ 6 SE RWD (2026)",
+    msrp: 34950,
+    iceBenchmark: { model: "Toyota Camry/Honda Accord", price: 32000, mpg: 32 }
+  },
+  {
+    make: "Hyundai", model: "IONIQ 5 RWD", batteryCapacity: 58, epaRange: 303, label: "Hyundai IONIQ 5 RWD (2026)",
+    msrp: 41100,
+    iceBenchmark: { model: "Honda CR-V/Mazda CX-5", price: 33000, mpg: 28 }
+  },
+  {
+    make: "Kia", model: "EV6 RWD", batteryCapacity: 58, epaRange: 282, label: "Kia EV6 RWD (2026)",
+    msrp: 41900,
+    iceBenchmark: { model: "Hyundai Tucson/Kia Sportage", price: 34000, mpg: 28 }
+  },
+  {
+    make: "Nissan", model: "LEAF Plus", batteryCapacity: 62, epaRange: 226, label: "Nissan LEAF Plus (2026)",
+    msrp: 34950,
+    iceBenchmark: { model: "Honda Civic", price: 28000, mpg: 33 }
+  },
+  {
+    make: "Nissan", model: "Ariya RWD", batteryCapacity: 63, epaRange: 228, label: "Nissan Ariya RWD (2026)",
+    msrp: 40150,
+    iceBenchmark: { model: "Toyota Camry", price: 32000, mpg: 31 }
+  },
+  {
+    make: "BMW", model: "i4 eDrive40", batteryCapacity: 81, epaRange: 301, label: "BMW i4 eDrive40 (2026)",
+    msrp: 59700,
+    iceBenchmark: { model: "BMW 440i", price: 55000, mpg: 24 }
+  },
+  {
+    make: "Volkswagen", model: "ID.4 Standard", batteryCapacity: 62, epaRange: 275, label: "Volkswagen ID.4 Standard (2026)",
+    msrp: 38995,
+    iceBenchmark: { model: "VW Tiguan/Honda CR-V", price: 33000, mpg: 27 }
+  },
+  {
+    make: "Lucid", model: "Air Standard Range", batteryCapacity: 88, epaRange: 420, label: "Lucid Air Standard (2026)",
+    msrp: 69900,
+    iceBenchmark: { model: "BMW 7 Series/Mercedes S-Class", price: 85000, mpg: 22 }
+  },
+  {
+    make: "Rivian", model: "R1S Dual Motor", batteryCapacity: 135, epaRange: 330, label: "Rivian R1S Dual Motor (2026)",
+    msrp: 75750,
+    iceBenchmark: { model: "Cadillac Escalade/Land Rover Range Rover", price: 85000, mpg: 18 }
+  },
+  {
+    make: "Polestar", model: "3 Single Motor", batteryCapacity: 111, epaRange: 315, label: "Polestar 3 Single Motor (2026)",
+    msrp: 73550,
+    iceBenchmark: { model: "Porsche Macan/BMW X5", price: 70000, mpg: 20 }
+  },
 ];
 
 export const ELECTRICITY_RATES: StateElectricity[] = [

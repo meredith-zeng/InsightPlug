@@ -5,6 +5,12 @@ export interface EVModel {
   batteryCapacity: number;
   epaRange: number;
   label: string;
+  msrp: number; // Manufacturer Suggested Retail Price in USD
+  iceBenchmark?: {
+    model: string;
+    price: number;
+    mpg: number;
+  };
 }
 
 export interface RegionData {
