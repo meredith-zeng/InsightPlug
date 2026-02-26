@@ -1,8 +1,7 @@
-
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { UserProfile, ChatMessage } from '../types';
 import { REGIONS, EV_MODELS, ELECTRICITY_RATES } from '../services/dataCatalog';
-import { startResearchChat } from '../services/geminiService';
+import { buildExpertReply } from '../services/localAdvisor';
 import { Icons } from '../constants';
 import { marked } from 'marked';
 import ResultsPanel from './ResultsPanel';
@@ -11,7 +10,7 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [chatSession, setChatSession] = useState<any>(null);
+  const [isChatOpen, setIsChatOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const PUBLIC_RATE_MULTIPLIER = 2.5;
@@ -67,9 +66,6 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
 
 
   useEffect(() => {
-    const session = startResearchChat(profile);
-    setChatSession(session);
-    
     const welcome = `
 **EV ECO EXPERT ONLINE**
 I've analyzed your mobility constraints:
@@ -80,7 +76,7 @@ I've analyzed your mobility constraints:
 How can I help you optimize further?
     `;
     setMessages([{ role: 'model', content: welcome }]);
-  }, [profile.region.fips, profile.ev.model, profile.dailyMiles]);
+  }, [profile.region.fips, profile.ev.model, profile.dailyMiles, calculateMetrics]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -94,25 +90,17 @@ How can I help you optimize further?
     setChatInput('');
     setIsTyping(true);
     try {
-      const stream = await chatSession.sendMessageStream({ message: text });
-      let fullText = '';
-      setMessages(prev => [...prev, { role: 'model', content: '' }]);
-      for await (const chunk of stream) {
-        fullText += chunk.text;
-        setMessages(prev => {
-          const next = [...prev];
-          next[next.length - 1].content = fullText;
-          return next;
-        });
-      }
+      const reply = buildExpertReply(profile, calculateMetrics, text);
+      await new Promise(resolve => setTimeout(resolve, 350));
+      setMessages(prev => [...prev, { role: 'model', content: reply }]);
     } catch (err) { console.error(err); } finally { setIsTyping(false); }
   };
 
   return (
-    <div className="flex gap-6 h-full w-full overflow-hidden items-stretch">
-      
+    <div className="flex flex-col lg:flex-row gap-6 w-full items-stretch">
+
       {/* COLUMN 1: CONFIGURATION (Left Sidebar) */}
-      <aside className="w-[280px] glass rounded-[32px] p-6 flex flex-col gap-6 shrink-0 border-slate-200/50">
+      <aside className="w-full lg:w-[280px] glass rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 flex flex-col gap-6 shrink-0 border-slate-200/50">
         <header className="flex items-center gap-3 shrink-0">
           <div className="w-1 h-5 bg-slate-900 rounded-full"></div>
           <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Configuration</h2>
@@ -237,62 +225,75 @@ How can I help you optimize further?
       />
 
       {/* COLUMN 3: LLM EXPERT (Right Sidebar) */}
-      <aside className="w-[380px] bg-slate-900 rounded-[40px] shadow-2xl flex flex-col overflow-hidden shrink-0 border border-white/5">
-        <header className="p-8 border-b border-white/5 flex items-center gap-4 bg-slate-900/50 shrink-0">
-          <div className="w-12 h-12 rounded-full border border-emerald-500/20 flex items-center justify-center">
-            <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
-              <Icons.Zap size={16} fill="currentColor" />
-            </div>
-          </div>
-          <div>
-            <h2 className="text-white font-black text-lg uppercase tracking-widest leading-none">EV Eco Expert</h2>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Active reasoning</span>
-            </div>
-          </div>
-        </header>
-
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 chat-scroll bg-transparent">
-          {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[90%] p-5 rounded-[24px] shadow-sm text-xs leading-relaxed ${
-                m.role === 'user' 
-                  ? 'bg-white/10 text-white rounded-tr-none border border-white/10 font-bold' 
-                  : 'bg-white/5 text-slate-300 border border-white/5 rounded-tl-none font-medium'
-              }`}>
-                {m.role === 'model' ? (
-                  <div className="prose prose-invert prose-sm max-w-none text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: marked.parse(m.content) }} />
-                ) : (
-                  <span>{m.content}</span>
-                )}
+      <aside className="w-full lg:w-[380px] bg-slate-900 rounded-[28px] sm:rounded-[40px] shadow-2xl flex flex-col overflow-hidden shrink-0 border border-white/5">
+        <header className="p-6 sm:p-8 border-b border-white/5 flex items-center justify-between gap-4 bg-slate-900/50 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full border border-emerald-500/20 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white">
+                <Icons.Zap size={16} fill="currentColor" />
               </div>
             </div>
-          ))}
-          {isTyping && <div className="text-[9px] font-black text-emerald-500/50 uppercase animate-pulse flex items-center gap-2 pl-2 tracking-widest">Expert Thinking...</div>}
-        </div>
-
-        <div className="px-8 pb-3 flex flex-wrap gap-2 shrink-0">
-          {['5-year savings?', 'Home charging impact?', 'Battery capacity?'].map(p => (
-            <button 
-              key={p} onClick={() => sendMessage(p)}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white border border-white/5 rounded-full text-[9px] font-bold transition-all"
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={e => { e.preventDefault(); sendMessage(chatInput); }} className="p-8 bg-slate-900 border-t border-white/5 flex gap-3 shrink-0">
-          <input 
-            value={chatInput} onChange={e => setChatInput(e.target.value)}
-            placeholder="Question the trade-offs..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xs text-white focus:border-emerald-500 outline-none transition-all placeholder:text-slate-700 font-bold"
-          />
-          <button disabled={isTyping} className="bg-emerald-500 text-slate-900 p-4 rounded-2xl hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/10 shrink-0">
-            <Icons.Send size={22} />
+            <div>
+              <h2 className="text-white font-black text-lg uppercase tracking-widest leading-none">EV Eco Expert</h2>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Active reasoning</span>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsChatOpen(prev => !prev)}
+            className="text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-300 transition-colors"
+            aria-expanded={isChatOpen}
+            aria-controls="expert-chat-body"
+          >
+            {isChatOpen ? 'Collapse' : 'Expand'}
           </button>
-        </form>
+        </header>
+
+        <div id="expert-chat-body" className={isChatOpen ? 'flex flex-col flex-1' : 'hidden'}>
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 chat-scroll bg-transparent">
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[90%] p-5 rounded-[24px] shadow-sm text-xs leading-relaxed ${
+                  m.role === 'user' 
+                    ? 'bg-white/10 text-white rounded-tr-none border border-white/10 font-bold' 
+                    : 'bg-white/5 text-slate-300 border border-white/5 rounded-tl-none font-medium'
+                }`}>
+                  {m.role === 'model' ? (
+                    <div className="prose prose-invert prose-sm max-w-none text-[12px] leading-relaxed" dangerouslySetInnerHTML={{ __html: marked.parse(m.content) }} />
+                  ) : (
+                    <span>{m.content}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+            {isTyping && <div className="text-[9px] font-black text-emerald-500/50 uppercase animate-pulse flex items-center gap-2 pl-2 tracking-widest">Expert Thinking...</div>}
+          </div>
+
+          <div className="px-6 sm:px-8 pb-3 flex flex-wrap gap-2 shrink-0">
+            {['5-year savings?', 'Home charging impact?', 'Battery capacity?'].map(p => (
+              <button
+                key={p} onClick={() => sendMessage(p)}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white border border-white/5 rounded-full text-[9px] font-bold transition-all"
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={e => { e.preventDefault(); sendMessage(chatInput); }} className="p-6 sm:p-8 bg-slate-900 border-t border-white/5 flex gap-3 shrink-0">
+            <input
+              value={chatInput} onChange={e => setChatInput(e.target.value)}
+              placeholder="Question the trade-offs..."
+              className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xs text-white focus:border-emerald-500 outline-none transition-all placeholder:text-slate-700 font-bold"
+            />
+            <button disabled={isTyping} className="bg-emerald-500 text-slate-900 p-4 rounded-2xl hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/10 shrink-0">
+              <Icons.Send size={22} />
+            </button>
+          </form>
+        </div>
       </aside>
     </div>
   );

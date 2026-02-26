@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { UserProfile } from './types';
 import { EV_MODELS, REGIONS } from './services/dataCatalog';
@@ -25,16 +24,15 @@ const App: React.FC = () => {
   });
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#f8fafc] overflow-hidden">
-      <nav className="z-50 py-6 shrink-0">
-        <div className="max-w-[1700px] mx-auto w-full px-12 flex justify-between items-center">
+    <div className="min-h-screen w-full flex flex-col bg-[#f8fafc]">
+      <nav className="z-50 py-4 sm:py-6 shrink-0">
+        <div className="max-w-[1700px] mx-auto w-full px-4 sm:px-6 lg:px-12 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-slate-900 rounded-[14px] flex items-center justify-center text-white font-black italic shadow-xl">IP</div>
             <div>
               <div className="font-extrabold text-xl tracking-tighter text-slate-900 leading-none flex items-center gap-1">
                 InsightPlug<div className="w-1 h-1 rounded-full bg-emerald-500 mt-1"></div>
               </div>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5 block">Intelligent Mobility Advisor</span>
             </div>
           </div>
           
@@ -45,7 +43,7 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <main className="flex-1 max-w-[1700px] mx-auto w-full px-12 pb-8 overflow-hidden">
+      <main className="flex-1 max-w-[1700px] mx-auto w-full px-4 sm:px-6 lg:px-12 pb-6 sm:pb-8">
         <SimulationLab profile={profile} setProfile={setProfile} />
       </main>
     </div>

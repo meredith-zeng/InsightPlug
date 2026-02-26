@@ -1,8 +1,7 @@
-
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { UserProfile, CostDataPoint, AISummary } from '../types';
-import { getGeminiSummary } from '../services/geminiService';
+import { UserProfile, CostDataPoint } from '../types';
+import { buildLocalSummary } from '../services/localAdvisor';
 import { Icons } from '../constants';
 
 interface AnalysisDashboardProps {
@@ -10,9 +9,6 @@ interface AnalysisDashboardProps {
 }
 
 const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ profile }) => {
-  const [aiSummary, setAiSummary] = useState<AISummary | null>(null);
-  const [loading, setLoading] = useState(false);
-
   const data: CostDataPoint[] = useMemo(() => {
     const points: CostDataPoint[] = [];
     // Updated property names to match types.ts
@@ -40,31 +36,18 @@ const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ profile }) => {
     return points;
   }, [profile]);
 
-  useEffect(() => {
-    const fetchSummary = async () => {
-      setLoading(true);
-      try {
-        const summary = await getGeminiSummary(profile);
-        setAiSummary(summary);
-      } catch (err) {
-        console.error("Failed to fetch summary:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSummary();
-  }, [profile]);
+  const aiSummary = useMemo(() => buildLocalSummary(profile, data), [profile, data]);
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart Card */}
-        <div className="lg:col-span-2 glass rounded-2xl p-6 shadow-sm min-h-[400px]">
+        <div className="lg:col-span-2 glass rounded-2xl p-4 sm:p-6 shadow-sm min-h-[320px] sm:min-h-[400px]">
           <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
             <Icons.Zap className="text-emerald-500" />
             Cumulative Cost Comparison
           </h3>
-          <div className="h-[300px]">
+          <div className="h-[220px] sm:h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -99,19 +82,13 @@ const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ profile }) => {
         </div>
 
         {/* AI Insight Sidebar */}
-        <div className="glass rounded-2xl p-6 shadow-sm space-y-6">
+        <div className="glass rounded-2xl p-4 sm:p-6 shadow-sm space-y-6">
           <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
             <Icons.Info className="text-blue-500" />
             AI Expert Analysis
           </h3>
           
-          {loading ? (
-            <div className="space-y-4 animate-pulse">
-              <div className="h-20 bg-slate-100 rounded-lg"></div>
-              <div className="h-24 bg-slate-100 rounded-lg"></div>
-              <div className="h-16 bg-slate-100 rounded-lg"></div>
-            </div>
-          ) : aiSummary && (
+          {aiSummary && (
             <div className="space-y-4">
               <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
                 <p className="text-sm font-medium text-emerald-800 mb-1">Estimated Savings</p>

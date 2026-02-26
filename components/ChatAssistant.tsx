@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, ChatMessage } from '../types';
-import { startChatSession } from '../services/geminiService';
+import { buildAssistantReply } from '../services/localAdvisor';
 import { Icons } from '../constants';
 
 interface ChatAssistantProps {
@@ -14,12 +13,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({ profile }) => {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const chatRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    chatRef.current = startChatSession(profile);
-  }, [profile]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -37,20 +31,9 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({ profile }) => {
     setIsTyping(true);
 
     try {
-      const result = await chatRef.current.sendMessageStream({ message: input });
-      let fullText = '';
-      
-      // Temporary message for streaming
-      setMessages(prev => [...prev, { role: 'model', content: '' }]);
-
-      for await (const chunk of result) {
-        fullText += chunk.text;
-        setMessages(prev => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1].content = fullText;
-          return newMessages;
-        });
-      }
+      const reply = buildAssistantReply(profile, input);
+      await new Promise(resolve => setTimeout(resolve, 350));
+      setMessages(prev => [...prev, { role: 'model', content: reply }]);
     } catch (err) {
       console.error(err);
       setMessages(prev => [...prev, { role: 'model', content: "Sorry, I hit a snag. Please try again." }]);
@@ -60,8 +43,8 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({ profile }) => {
   };
 
   return (
-    <div className="flex flex-col h-[600px] glass rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-      <div className="bg-slate-800 p-4 text-white flex items-center justify-between">
+    <div className="flex flex-col h-[480px] sm:h-[600px] w-full glass rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+      <div className="bg-slate-800 p-3 sm:p-4 text-white flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <h4 className="font-bold">EV Knowledge Base</h4>
@@ -93,7 +76,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({ profile }) => {
         )}
       </div>
 
-      <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-200 flex gap-2">
+      <form onSubmit={handleSend} className="p-3 sm:p-4 bg-white border-t border-slate-200 flex gap-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
