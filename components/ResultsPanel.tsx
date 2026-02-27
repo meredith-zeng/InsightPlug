@@ -22,35 +22,36 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
 
   return (
     <div className="flex-1 flex flex-col gap-6">
+
       {/* Top Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 h-fit shrink-0">
         {/* Monthly Surplus - Left */}
-        <div className="bg-white rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-lg shadow-slate-200/20 border border-slate-100">
-          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Monthly Surplus</div>
-          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mb-6">Disposable Income Liquidity</div>
-          <div className="space-y-2">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Legacy TCO</div>
-            <div className="text-3xl font-black text-slate-900">${legacyCost}</div>
+        <div className="bg-white rounded-[28px] sm:rounded-[36px] p-8 sm:p-10 shadow-lg shadow-slate-200/20 border border-slate-100 min-h-[240px] flex flex-col justify-center">
+          <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Monthly Surplus</div>
+          <div className="text-[12px] font-bold text-slate-400 uppercase tracking-tight mb-8">Disposable Income Liquidity</div>
+          <div className="space-y-3">
+            <div className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Legacy TCO</div>
+            <div className="text-4xl sm:text-5xl font-black text-slate-900">${legacyCost}</div>
           </div>
         </div>
 
         {/* Central Large Value */}
-        <div className="bg-white rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col items-center justify-center">
-          <span className="text-4xl sm:text-6xl font-black text-emerald-600 tracking-tighter leading-none mb-2">+${monthlySurplus}</span>
-          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest text-center">Immediate Liquidity / Mo</span>
+        <div className="bg-white rounded-[28px] sm:rounded-[36px] p-8 sm:p-10 shadow-lg shadow-slate-200/20 border border-slate-100 min-h-[240px] flex flex-col items-center justify-center">
+          <span className="text-5xl sm:text-6xl font-black text-emerald-600 tracking-tighter leading-none mb-3">+${monthlySurplus}</span>
+          <span className="text-[12px] font-black text-emerald-600 uppercase tracking-widest text-center">Immediate Liquidity / Mo</span>
         </div>
 
         {/* TCO Comparison - Right */}
-        <div className="bg-white rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-lg shadow-slate-200/20 border border-slate-100">
-          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-6">TCO Comparison</div>
-          <div className="space-y-4">
+        <div className="bg-white rounded-[28px] sm:rounded-[36px] p-8 sm:p-10 shadow-lg shadow-slate-200/20 border border-slate-100 min-h-[240px] flex flex-col justify-center">
+          <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-8">TCO Comparison</div>
+          <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-tight">Legacy TCO</span>
-              <span className="text-2xl font-black text-slate-900">${legacyCost}</span>
+              <span className="text-[12px] font-black text-slate-400 uppercase tracking-tight">Legacy TCO</span>
+              <span className="text-3xl sm:text-4xl font-black text-slate-900">${legacyCost}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tight">Efficient TCO</span>
-              <span className="text-2xl font-black text-emerald-600">${efficientCost}</span>
+              <span className="text-[12px] font-black text-emerald-600 uppercase tracking-tight">Efficient TCO</span>
+              <span className="text-3xl sm:text-4xl font-black text-emerald-600">${efficientCost}</span>
             </div>
           </div>
         </div>
@@ -60,12 +61,12 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 flex-1 min-h-0">
         {/* Daily Asset Utilization */}
         <div className="bg-white rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col">
-          <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1">Daily Asset Utilization (DAU)</div>
-          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mb-6">Allocative Efficiency of Capital</div>
+          <div className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-1">Daily Asset Utilization (DAU)</div>
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-tight mb-6">Allocative Efficiency of Capital</div>
 
           <div className="flex-1 flex flex-col justify-center">
             <div className="flex items-baseline mb-6">
-              <span className="text-5xl sm:text-7xl font-black text-slate-900 tracking-tighter leading-none">{dailyAssetUtilization.toFixed(1)}</span>
+              <span className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tighter leading-none">{dailyAssetUtilization.toFixed(1)}</span>
               <span className="text-2xl sm:text-3xl text-slate-200 ml-2 font-black">%</span>
             </div>
 
@@ -77,8 +78,8 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
             </div>
 
             <div>
-              <div className="text-[9px] font-black text-slate-900 uppercase tracking-widest mb-1">Capital State</div>
-              <div className="text-xl font-black text-orange-500 uppercase">Over-Provisioned</div>
+              <div className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-1">Capital State</div>
+              <div className="text-lg sm:text-xl font-black text-orange-500 uppercase">Over-Provisioned</div>
             </div>
           </div>
         </div>
@@ -105,7 +106,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
           </div>
 
           <div className="text-right shrink-0">
-            <div className="text-2xl sm:text-3xl font-black text-slate-900">{profile.dailyMiles}.4MI</div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-900">{profile.dailyMiles.toFixed(1)}MI</div>
             <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Daily Sector</div>
           </div>
         </div>

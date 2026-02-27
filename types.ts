@@ -1,10 +1,10 @@
-
 export interface EVModel {
   make: string;
   model: string;
-  batteryCapacity: number;
   epaRange: number;
   label: string;
+  publicLabel?: string;
+  detailLabel?: string;
   msrp: number; // Manufacturer Suggested Retail Price in USD
   iceBenchmark?: {
     model: string;

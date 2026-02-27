@@ -41,7 +41,7 @@ export const buildAssistantReply = (profile: UserProfile, input: string) => {
     return `With about ${homeShare}% home charging, you would refuel roughly every ${chargingInterval} days based on your current driving.`;
   }
 
-  if (/(battery|range)/.test(intent)) {
+  if (/(range|utilization)/.test(intent)) {
     return `Your selected EV range is ${profile.ev.epaRange} miles. Daily use is about ${dailyUtilization.toFixed(1)}% of that capacity.`;
   }
 
@@ -75,8 +75,8 @@ export const buildExpertReply = (profile: UserProfile, metrics: ExpertMetrics, i
     return `You can refuel about every ${interval} days at your current driving pace. A higher home charging share improves the cash flow signal.`;
   }
 
-  if (/(battery|range|utilization)/.test(intent)) {
-    return `Daily utilization is about ${utilization.toFixed(1)}% of your battery, so range buffer is healthy.`;
+  if (/(range|utilization)/.test(intent)) {
+    return `Daily utilization is about ${utilization.toFixed(1)}% of your EPA range (${profile.ev.epaRange} miles), so range buffer is healthy.`;
   }
 
   return `I can explain the cash-flow signal, charging interval, or utilization trade-offs if you specify a focus.`;

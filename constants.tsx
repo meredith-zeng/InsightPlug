@@ -1,27 +1,6 @@
-
 import React from 'react';
-import { UserProfile } from './types';
-import { EV_MODELS, REGIONS } from './services/dataCatalog';
 
-// Updated to match the UserProfile interface in types.ts
-export const DEFAULT_PROFILE: UserProfile = {
-  region: REGIONS[0],
-  ev: EV_MODELS[0],
-  homeChargingRatio: 0.8,
-  annualMileage: 12000,
-  // Fix: Added missing dailyMiles property required by UserProfile interface
-  dailyMiles: REGIONS[0].dailyMiles,
-  gasPrice: 3.50,
-  electricRate: 0.15,
-  ownershipYears: 10,
-  homeChargingAccess: true,
-  icePrice: 30000,
-  iceMpg: 28,
-  evPrice: 45000,
-  evEfficiency: 3.5,
-  maintenanceSavingPerYear: 800,
-  taxIncentive: 7500
-};
+// Removed unused imports for UserProfile, EV_MODELS, REGIONS.
 
 export const Icons = {
   Zap: (props: any) => (
@@ -38,5 +17,17 @@ export const Icons = {
   ),
   Send: (props: any) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+  ),
+  MapPin: (props: any) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+  ),
+  TrendingUp: (props: any) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+  ),
+  DollarSign: (props: any) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+  ),
+  ArrowRight: (props: any) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
   )
 };
