@@ -34,7 +34,6 @@ export interface UserProfile {
   iceMpg: number;
   icePrice: number;
   evPrice: number;
-  taxIncentive: number;
   annualMileage: number;
   dailyMiles: number;
   electricRate: number;

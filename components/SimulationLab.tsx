@@ -44,12 +44,12 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
                          (annualDepreciation * ownershipYears) +
                          (profile.maintenanceSavingPerYear * 3 * ownershipYears);
 
-    const totalEvCost = (profile.evPrice - profile.taxIncentive) + (annualEvEnergyCost * ownershipYears) +
+    const totalEvCost = (profile.evPrice) + (annualEvEnergyCost * ownershipYears) +
                         (annualEvDepreciation * ownershipYears) +
                         (profile.maintenanceSavingPerYear * ownershipYears);
 
     const tcoSavings = totalIceCost - totalEvCost;
-    const breakEvenMiles = (profile.icePrice - (profile.evPrice - profile.taxIncentive)) /
+    const breakEvenMiles = (profile.icePrice - profile.evPrice) /
                           ((profile.gasPrice / profile.iceMpg) - (blendedEvRate / profile.evEfficiency));
 
     return {

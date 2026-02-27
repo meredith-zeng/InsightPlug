@@ -18,7 +18,7 @@ const estimateMonthlySavings = (profile: UserProfile) => {
 
 const estimateBreakEvenYears = (profile: UserProfile, monthlySavings: number) => {
   if (monthlySavings <= 0) return null;
-  const upfrontGap = (profile.evPrice - profile.taxIncentive) - profile.icePrice;
+  const upfrontGap = profile.evPrice - profile.icePrice;
   if (upfrontGap <= 0) return 0;
   return upfrontGap / (monthlySavings * 12);
 };
@@ -31,9 +31,7 @@ export const buildAssistantReply = (profile: UserProfile, input: string) => {
   const breakEvenYears = estimateBreakEvenYears(profile, monthlySavings);
 
   if (/(tax|credit|incentive)/.test(intent)) {
-    const effectiveEvPrice = profile.evPrice - profile.taxIncentive;
-    const priceDelta = effectiveEvPrice - profile.icePrice;
-    return `Your estimated incentive is ${toCurrency(profile.taxIncentive)}, putting the EV at about ${toCurrency(effectiveEvPrice)}. The upfront gap vs. ICE is ${toCurrency(priceDelta)}.`;
+    return 'Tax credits are not included in this analysis.';
   }
 
   if (/(charging|charge|home)/.test(intent)) {
@@ -50,12 +48,12 @@ export const buildAssistantReply = (profile: UserProfile, input: string) => {
       ? `Estimated monthly operating savings are about ${toCurrency(monthlySavings)}.`
       : `Estimated monthly operating cost is higher by about ${toCurrency(Math.abs(monthlySavings))}.`;
     const breakEvenLine = breakEvenYears === null
-      ? 'Break-even depends on incentives and usage changes.'
+      ? 'Break-even depends on usage changes.'
       : `Estimated break-even is about ${breakEvenYears.toFixed(1)} years.`;
     return `${savingsLine} ${breakEvenLine}`;
   }
 
-  return `Ask about charging, incentives, range, or cost trade-offs and I will break it down.`;
+  return `Ask about charging, range, or cost trade-offs and I will break it down.`;
 };
 
 export const buildExpertReply = (profile: UserProfile, metrics: ExpertMetrics, input: string) => {
@@ -105,4 +103,3 @@ export const buildLocalSummary = (profile: UserProfile, data: CostDataPoint[]): 
     recommendation
   };
 };
-

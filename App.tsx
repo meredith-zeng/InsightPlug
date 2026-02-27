@@ -17,7 +17,6 @@ const App: React.FC = () => {
     iceMpg: defaultEV.iceBenchmark?.mpg || 28,
     icePrice: defaultEV.iceBenchmark?.price || 32000,
     evPrice: defaultEV.msrp,
-    taxIncentive: 7500, // Federal tax credit (may vary)
     annualMileage: REGIONS[0].dailyMiles * 365,
     dailyMiles: REGIONS[0].dailyMiles,
     electricRate: 0.1789, // Updated to 2026 national average
