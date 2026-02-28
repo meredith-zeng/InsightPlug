@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { UserProfile, ChatMessage } from '../types';
 import { ELECTRICITY_RATES, EV_MODELS, REGIONS } from '../services/dataCatalog';
 import { buildExpertReply } from '../services/localAdvisor';
+import { buildOpenAIReply, isOpenAIConfigured } from '../services/openaiAdvisor';
 import { marked } from 'marked';
 import ResultsPanel from './ResultsPanel';
 import TheoryExplainer from './TheoryExplainer';
@@ -17,6 +18,10 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
   const limiterRef = useRef(createLimiter('insightplug-chat', { maxPerMinute: 6, maxTotal: 20 }));
 
   const PUBLIC_RATE_MULTIPLIER = 2.5;
+  const USE_OPENAI = isOpenAIConfigured();
+
+  // Debug: Log OpenAI mode status
+  console.log('[SimulationLab] USE_OPENAI:', USE_OPENAI);
 
   const calculateMetrics = useMemo(() => {
     const milesPerMonth = profile.dailyMiles * 30.4;
@@ -101,10 +106,43 @@ How can I help you optimize further?
     setChatInput('');
     setIsTyping(true);
     try {
-      const reply = buildExpertReply(profile, calculateMetrics, text);
+      let reply: string;
+
+      console.log('[sendMessage] USE_OPENAI:', USE_OPENAI);
+
+      if (USE_OPENAI) {
+        console.log('[sendMessage] Attempting OpenAI API call...');
+        try {
+          reply = await buildOpenAIReply(profile, calculateMetrics, text);
+          console.log('[sendMessage] OpenAI response received');
+        } catch (openaiErr) {
+          console.error('[sendMessage] OpenAI API failed, falling back to rule-based:', openaiErr);
+
+          // Check if it's a 401 permission error
+          const errorMsg = openaiErr instanceof Error ? openaiErr.message : String(openaiErr);
+          if (errorMsg.includes('401') || errorMsg.includes('insufficient permissions')) {
+            // Add a helpful message to the user
+            setMessages(prev => [...prev, {
+              role: 'model',
+              content: `⚠️ **OpenAI API Configuration Issue**\n\nYour API key lacks necessary permissions. Please:\n1. Visit [OpenAI API Keys](https://platform.openai.com/api-keys)\n2. Create a new key with "model.request" permission\n3. Update \`.env.local\` with the new key\n4. Restart the dev server\n\nFalling back to rule-based responses for now...`
+            }]);
+            await new Promise(resolve => setTimeout(resolve, 350));
+          }
+
+          reply = buildExpertReply(profile, calculateMetrics, text);
+        }
+      } else {
+        console.log('[sendMessage] Using rule-based response');
+        reply = buildExpertReply(profile, calculateMetrics, text);
+      }
+
       await new Promise(resolve => setTimeout(resolve, 350));
       setMessages(prev => [...prev, { role: 'model', content: reply }]);
-    } catch (err) { console.error(err); } finally { setIsTyping(false); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
