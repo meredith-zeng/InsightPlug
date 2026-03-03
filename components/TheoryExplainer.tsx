@@ -88,20 +88,20 @@ const TheoryExplainer: React.FC<TheoryExplainerProps> = ({ signal }) => {
 
       {/* Content - Expanded */}
       {isOpen && (
-        <div className="space-y-2 pt-2 border-t-2 border-current border-opacity-15">
+        <div className="space-y-1.5 pt-1.5 border-t border-current border-opacity-15">
           {/* Key Message */}
-          <div className={`p-3 rounded-lg bg-white/50 border-l-4 ${exp.accentColor}`}>
-            <p className={`text-[12px] font-bold ${exp.accentColor}`}>
+          <div className={`p-2 rounded-lg bg-white/50 border-l-2 ${exp.accentColor}`}>
+            <p className={`text-[10px] font-bold ${exp.accentColor}`}>
               {exp.keyMessage}
             </p>
           </div>
 
           {/* Points */}
-          <div className="space-y-1.5 pl-1">
+          <div className="space-y-1 pl-1">
             {exp.points.map((point: string, idx: number) => (
-              <div key={idx} className="flex gap-2">
-                <span className={`text-sm ${exp.accentColor} flex-shrink-0 mt-0.5`}>→</span>
-                <p className="text-[12px] text-slate-700 leading-relaxed">
+              <div key={idx} className="flex gap-1.5">
+                <span className={`text-xs ${exp.accentColor} flex-shrink-0 mt-0.5`}>→</span>
+                <p className="text-[10px] text-slate-700 leading-relaxed">
                   {point}
                 </p>
               </div>

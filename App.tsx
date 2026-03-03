@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserProfile } from './types';
 import { EV_MODELS, REGIONS } from './services/dataCatalog';
+import { Icons } from './constants';
 import ConfigurationWizard from './components/ConfigurationWizard';
 import SimulationLab from './components/SimulationLab';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -39,7 +40,9 @@ const App: React.FC = () => {
       <nav className="z-50 py-4 sm:py-6 shrink-0">
         <div className="max-w-[1700px] mx-auto w-full px-4 sm:px-6 lg:px-12 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-slate-900 rounded-[14px] flex items-center justify-center text-white font-black italic shadow-xl">IP</div>
+            <div className="w-10 h-10 bg-slate-900 rounded-[14px] flex items-center justify-center text-white shadow-xl">
+              <Icons.ElectricCar className="w-6 h-6" />
+            </div>
             <div>
               <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">InsightPlug</h1>
               <p className="text-[10px] font-semibold text-slate-500 tracking-tight">EV Economic Literacy Tool</p>

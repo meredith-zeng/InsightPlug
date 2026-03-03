@@ -10,9 +10,6 @@ type ExpertMetrics = {
 const API_KEY = import.meta.env.VITE_OPENAI_API_KEY || '';
 const MODEL = import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini';
 
-// Debug: Log API key status (only first 10 chars for security)
-console.log('[OpenAI] API Key loaded:', API_KEY ? `${API_KEY.substring(0, 10)}...` : 'NOT FOUND');
-console.log('[OpenAI] Model:', MODEL);
 
 export const buildOpenAIReply = async (
   profile: UserProfile,

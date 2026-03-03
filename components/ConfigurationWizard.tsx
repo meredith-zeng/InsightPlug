@@ -47,7 +47,9 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
           <div className="relative z-10 flex flex-col justify-between h-full">
             <div>
               <div className="inline-flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-black text-lg italic">IP</div>
+                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white">
+                  <Icons.ElectricCar className="w-6 h-6" />
+                </div>
               </div>
               <h1 className="text-3xl font-black text-slate-900 leading-tight mb-2">InsightPlug</h1>
               <p className="text-sm text-slate-600">EV Economic Literacy Tool</p>
