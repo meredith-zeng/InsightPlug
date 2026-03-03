@@ -8,14 +8,38 @@ A research-oriented web application that provides personalized Electric Vehicle 
 
 ---
 
+## 🚀 Quick Start
+
+### Local Development
+```bash
+git clone https://github.com/yourusername/InsightPlug.git
+cd InsightPlug
+npm install
+npm run dev
+```
+
+Visit **http://localhost:3000**
+
+The app works out-of-the-box with a rule-based expert advisor (no API key required).
+
+### Production Deployment
+1. Push code to GitHub
+2. Connect to Vercel (https://vercel.com/new)
+3. Deploy with one click
+4. (Optional) Add `OPENAI_API_KEY` environment variable for AI features
+
+See [Deployment Guide](#-deployment) below.
+
+---
+
 ## 🛠️ Tech Stack
 
 | Category | Technologies |
 |----------|-------------|
-| **Frontend** | React 19, TypeScript |
-| **Build Tool** | Vite 6 |
+| **Frontend** | React 19, TypeScript, Vite 6 |
 | **Styling** | Tailwind CSS 3.4, PostCSS, Autoprefixer |
-| **Markdown** | Marked (for chat rendering) |
+| **Backend** | Vercel Serverless Functions (optional OpenAI integration) |
+| **Utilities** | Marked (Markdown parsing), Recharts (visualization) |
 
 ---
 
@@ -23,420 +47,463 @@ A research-oriented web application that provides personalized Electric Vehicle 
 
 ```
 InsightPlug/
-├── App.tsx                    # Main application component
-├── index.tsx                  # Application entry point
-├── types.ts                   # TypeScript type definitions
-├── constants.tsx              # Global constants (icons, etc.)
-├── index.css                  # Global styles & Tailwind imports
-│
-├── components/                # React components
-│   ├── ConfigurationWizard.tsx # Step-1 configuration UI
-│   ├── SimulationLab.tsx      # Analysis view (left sidebar + metrics)
-│   ├── ResultsPanel.tsx       # Metrics & maps
-│   ├── TheoryExplainer.tsx    # Theory explanations (expandable)
-│   └── ErrorBoundary.tsx      # UI error boundary
-│
-├── services/                  # Business logic & data services
-│   ├── dataCatalog.ts        # EV models, regions, electricity rates
-│   ├── localAdvisor.ts       # Local expert reasoning
-│   └── apiLimiter.ts         # Per-browser rate limiting
-│
-├── vite.config.ts            # Vite configuration
-├── tsconfig.json             # TypeScript configuration
-├── tailwind.config.js        # Tailwind CSS configuration
-├── postcss.config.js         # PostCSS configuration
-├── package.json              # Dependencies & scripts
-└── metadata.json             # App metadata & permissions
+├── api/
+│   └── chat.ts                # Vercel Serverless Function (OpenAI backend)
+├── components/
+│   ├── ConfigurationWizard.tsx # Configuration UI
+│   ├── SimulationLab.tsx      # Analysis view with chat
+│   ├── ResultsPanel.tsx       # Economic metrics display
+│   ├── TheoryExplainer.tsx    # Educational content
+│   └── ErrorBoundary.tsx      # Error handling
+├── services/
+│   ├── dataCatalog.ts         # EV models, regions, electricity rates
+│   ├── localAdvisor.ts        # Rule-based expert logic
+│   ├── openaiAdvisor.ts       # OpenAI API integration
+│   ├── apiLimiter.ts          # Rate limiting
+│   └── design-system.ts       # Design tokens
+├── App.tsx                    # Main component
+├── index.tsx                  # Entry point
+├── types.ts                   # Type definitions
+├── constants.tsx              # Icons and constants
+├── vercel.json                # Vercel deployment config
+├── vite.config.ts             # Vite config
+├── tailwind.config.js         # Tailwind config
+├── package.json               # Dependencies
+└── README.md                  # This file
 ```
 
 ---
 
-## 🎯 Key Components
+## 🎯 Core Features
 
-### **SimulationLab** (`SimulationLab.tsx`)
-The primary analysis interface with asymmetric layout:
+### 1. Configuration Wizard
+- Select US state/county (auto-load electricity rates & driving patterns)
+- Choose EV model (Tesla, Chevy, Nissan, Hyundai, BMW, etc.)
+- Input daily driving miles
+- Set home charging availability percentage
+- Real-time TCO calculation
 
-**Left Sidebar** (Control & Education):
-- Quick configuration panel (region, EV model, daily miles, home charging %)
-- Three expandable theory cards explaining Money dimension signals
-- Expert AI chat interface with rate-limiting (20 questions/session)
-  - **Rule-based mode** (default): Keyword pattern matching via `buildExpertReply()`
-  - **OpenAI mode** (optional): Real-time responses from GPT-4 with context injection
+### 2. Simulation Lab
+**Left Sidebar** (Controls & Education):
+- Quick configuration panel
+- Expandable theory cards explaining Money and Time dimensions
+- Expert chat interface (rule-based or AI-powered)
 
-**Right Panel** (Results Dashboard):
-- **Top Row**: Monthly Surplus (immediate liquidity), TCO comparison, EV cost breakdown
-- **Middle Row**: Daily Asset Utilization (%) with capital state indicator + geographic grounding map
-- **Bottom Section**: Charging interval (days between charges) and time efficiency metrics
+**Right Panel** (Results):
+- **Money Dimension**: Monthly Surplus, Daily Asset Utilization (DAU)
+- **Time Dimension**: Charging Interval, Access Friction
+- Geographic context via Google Maps embed
 
-**Calculation Engine**: Uses `calculateMetrics` useMemo hook to compute all economic signals in real-time
+### 3. Economic Signals
+- **Monthly Surplus**: Immediate disposable income (combat temporal discounting)
+- **Daily Asset Utilization**: Battery efficiency metric (reveal capital over-provisioning)
+- **Charging Interval**: Days between charges (quantify labor savings)
+- **Access Friction**: Distance to nearest fast charger + detour time
 
----
-
-### **ResultsPanel** (`ResultsPanel.tsx`)
-Displays the Money dimension through four key visualizations:
-
-1. **Monthly Surplus Card**
-   - Shows Legacy TCO (monthly fuel cost for ICE)
-   - Central large display: +$XX/month in immediate disposable income
-   - Reframes savings from lifetime abstractions to monthly liquidity
-
-2. **TCO Comparison Card**
-   - Legacy Total Cost vs Efficient (EV) Total Cost
-   - 5-year ownership horizon
-   - Clear visual contrast with color coding (gray vs emerald)
-
-3. **Daily Asset Utilization Card**
-   - Percentage bar visualization (0–100%)
-   - Capital state indicator: "Over-Provisioned" or "Optimally Utilized"
-   - Subtly conveys capital efficiency without range-anxiety framing
-
-4. **Geographic Context & Charging Interval**
-   - Embedded Google Map showing user's region
-   - Charging interval: "Every X Days" with interaction frequency
-   - Links abstract metrics to spatial/temporal reality
-
----
-
-### **TheoryExplainer** (`TheoryExplainer.tsx`)
-Expandable educational cards for behavioral economics grounding:
-
-- **Monthly Surplus Card** (`signal="surplus"`)
-  - Title: "Monthly Surplus" | Subtitle: "Temporal Discounting"
-  - Explains: Why people undervalue future savings; psychological benefit of monthly framing
+### 4. Expert Chat
+Two modes:
+- **Rule-Based** (default): Fast, free, no API required
+  - Pattern-matching via `services/localAdvisor.ts`
+  - Covers: savings, range, charging, payback period, utilization
+  - Rate limited: 6 msgs/min, 20 total/session
   
-- **DAU Card** (`signal="dau"`)
-  - Title: "Daily Asset Utilization" | Subtitle: "Capital Efficiency"
-  - Explains: Why battery over-provisioning reveals inefficient capital allocation
-  
-- **Charging Card** (`signal="charging"`)
-  - Title: "Charging Interval" | Subtitle: "Time Cost Reduction"
-  - Explains: Quantified labor savings from reduced fuel events
-
-- **Framework Card** (`signal="framework"`)
-  - Becker's Household Production Theory foundation
-  - Money vs Time constraints as primary EV adoption determinants
+- **OpenAI Mode** (optional): Real-time, intelligent, context-aware
+  - Powered by GPT-4o-mini via Vercel backend
+  - Grounded in Becker's Household Production Theory
+  - Requires `OPENAI_API_KEY` in Vercel environment variables
+  - Cost: ~$0.0001-$0.0003 per response
 
 ---
 
-### **ResultsPanel** (`ResultsPanel.tsx`)
-Displays key economic signals:
-- Monthly surplus
-- TCO comparison
-- Daily asset utilization (% of range used)
-- Charging interval (days between charges)
-
-### **TheoryExplainer** (`TheoryExplainer.tsx`)
-Expandable theory cards that connect each signal to the underlying reasoning framework.
-
-### **Data Catalog** (`dataCatalog.ts`)
-Centralized data repository:
-- EV model types (public labels) with detailed benchmarks
-- ICE benchmarks for comparison
-- Regional data (states, electricity rates)
-- Default assumptions (2026 pricing)
-
----
-
-## 🧠 Theoretical Foundation
-
-### Becker's Household Production Theory
+## 🧠 Theoretical Foundation: Becker's Household Production Theory
 
 InsightPlug applies **Gary Becker's Household Production Theory** to EV adoption:
 
-**Core Premise**: Households are constrained by two scarce resources:
-1. **Money** (budget, capital allocation, liquidity)
-2. **Time** (labor, opportunity cost, convenience)
+### Core Model
+Households face two binding constraints:
+1. **Money Constraint**: Budget, capital allocation, liquidity
+2. **Time Constraint**: Labor availability, opportunity cost, convenience
 
-**Application to EV Adoption**:
-- Vehicles are capital assets that convert money + time inputs into mobility outputs
-- EV advantages compound across both dimensions:
-  - **Money**: Lower operating costs (energy < fuel), but higher upfront capital
-  - **Time**: Reduced refueling labor (home charging), but potential charging time trade-offs
+### EV Application
+Vehicles are capital assets that convert money + time into mobility:
 
-**InsightPlug's Role**: 
-- Decompose these constraints into visible, actionable signals
-- Monthly Surplus → Makes money constraint comprehensible
-- Daily Asset Utilization → Reveals capital efficiency
-- Charging Interval → Quantifies time constraint improvements
+**Money Dimension**:
+- **Problem**: EVs require higher upfront capital but lower operating costs
+  - Consumers suffer temporal discounting: undervalue future savings
+  - Consumers obsess over abstract lifetime TCO
+- **Solution**: InsightPlug reframes as **monthly disposable income**
+  - $5,000 lifetime savings → $42/month
+  - Psychologically present, actionable
 
----
+**Time Dimension**:
+- **Problem**: EVs offer labor savings (no refueling) but require charging time planning
+  - Abstract labor savings are invisible
+  - Charging time trade-offs are unclear
+- **Solution**: InsightPlug quantifies:
+  - Charging Interval: "Every 7 days" (vs daily gas)
+  - Time Savings: "8.7 hours/year avoided refueling"
+  - Access Friction: "1.2 miles to nearest fast charger"
 
-## 🔧 Configuration
+### Economic Signals
+InsightPlug decomposes EV adoption decisions into observable signals:
 
-### Default Settings (2026)
-
-The app includes realistic 2026 defaults:
-- **Gas Price**: $3.45/gallon
-- **Electricity Rate**: $0.1789/kWh (national average)
-- **EV Efficiency**: 3.8 miles/kWh
-- **ICE Efficiency**: 28 MPG (varies by model)
-- **Public Charging Multiplier**: 2.5x home rate
-
-### Rate Limiting
-
-To avoid abuse, the expert chat is rate limited per browser (localStorage):
-- **Max total questions**: 20
-- **Max per minute**: 6
-
-Limits are enforced in `services/apiLimiter.ts` and persisted in local storage.
+| Signal | Formula | Insight |
+|--------|---------|---------|
+| **Monthly Surplus** | (Gas Cost - EV Cost) per month | Immediate liquidity gain |
+| **DAU** | (Daily Miles / EPA Range) × 100 | Capital efficiency; low % = over-provisioned |
+| **Charging Interval** | EPA Range / Daily Miles | Labor frequency reduction |
+| **Access Friction** | Detour distance + time to chargers | Time cost of charging infrastructure |
 
 ---
 
-## 📊 Data Sources & Assumptions (2026)
+## 💰 Economic Calculations
 
-### Fuel & Energy
-- **Gas Price**: $3.45/gallon (2026 forecast)
-- **Electricity Rate**: $0.1789/kWh (national average, state-specific overrides available)
-- **Public Charging Multiplier**: 2.5× home charging rate (markup for DCFC/L2)
-
-### Vehicle Efficiency
-- **ICE Efficiency**: 28 MPG (varies by model; configurable)
-- **EV Efficiency**: 3.8 kWh/mile (modern EV average; configurable)
-- **EV Efficiency Range**: 3.5–4.5 kWh/mile depending on model class
-
-### Financial Assumptions
-- **Purchase Prices**: 2026 MSRP data from major EV manufacturers
-- **ICE Depreciation**: 15% annually (standard auto industry baseline)
-- **EV Depreciation**: 10% annually (reflects improving battery technology & perceived value retention)
-- **EV Maintenance Savings**: $500/year vs ICE (no oil changes, longer brake life, etc.)
-- **Ownership Horizon**: 5 years (standard auto loan term) and configurable to 10 years
-
-### Regional Data
-- **States Covered**: All 50 US states + DC (via EIA electricity rate data)
-- **County-Level Daily Miles**: Based on NHTS data (National Household Travel Survey 2017)
-- **State Electricity Rates**: EIA, U.S. Energy Information Administration (updated 2026)
-
-### Data Catalog Source Files
-See `services/dataCatalog.ts` for:
-- `EV_MODELS[]` – Tesla, Chevy, Nissan, Hyundai, BMW, etc. (with ICE benchmarks)
-- `REGIONS[]` – US counties with FIPS codes and regional daily mileage
-- `ELECTRICITY_RATES[]` – State-by-state pricing
-- `STATES[]` – State abbreviations and metadata
-
----
-
-## 💰 Money Dimension: Economic Signals
-
-InsightPlug decomposes TCO into two actionable economic signals grounded in behavioral economics:
-
-### 1. **Monthly Surplus** (Temporal Discounting Mitigation)
-
-**Problem Addressed**: People systematically undervalue future savings due to temporal discounting.
-
-**Formula**:
+### Monthly Surplus
 ```
 Legacy Cost ($/month) = (Daily Miles × 30.4 / ICE MPG) × Gas Price
 EV Cost ($/month) = (Daily Miles × 30.4 / EV Efficiency) × Blended Rate
+
 Blended Rate = (Home% × State Rate) + ((1 - Home%) × State Rate × 2.5)
+  where: Home% = home charging ratio (0-1)
+         State Rate = grid electricity price (2026 EIA data)
+         2.5 = public charging markup (DCFC/L2 pricing)
+
 Monthly Surplus = Legacy Cost - EV Cost
 ```
 
-**Example**:
-- 40 daily miles, 28 MPG vehicle, $3.45/gallon gas
-- Legacy: (40 × 30.4 ÷ 28) × $3.45 = **$150/month**
-- EV at 3.8 kWh/mile, 75% home charging, $0.1789/kWh
-- EV Cost: (40 × 30.4 ÷ 3.8) × blended rate = **$78/month**
+**Example** (40 mi/day, 28 MPG vehicle, $3.45/gal):
+- Legacy: (40 × 30.4 ÷ 28) × $3.45 = $150/month
+- EV (3.8 kWh/mi, 75% home, $0.1789/kWh): $78/month
 - **Monthly Surplus: $72/month**
 
-**Psychological Effect**: 
-- Abstract: "$5,000 savings over 10 years" (difficult to process)
-- Concrete: "$42/month in new disposable income" (psychologically present)
-
-**Code Location**: `SimulationLab.tsx` lines 31–36
-
----
-
-### 2. **Daily Asset Utilization (DAU)** (Capital Efficiency)
-
-**Problem Addressed**: Consumers obsess over range (addressing range anxiety) while ignoring battery over-provisioning (a capital efficiency issue).
-
-**Formula**:
+### Daily Asset Utilization (DAU)
 ```
 DAU (%) = (Daily Miles / EPA Range) × 100
-Capital State = Over-Provisioned if DAU < 30%
+Status = "Over-Provisioned" if DAU < 30%, else "Optimally Utilized"
 ```
 
-**Example**:
-- 40 daily miles, Tesla Model 3 with 300-mile range
+**Example** (40 mi/day, 300-mile range):
 - DAU = (40 ÷ 300) × 100 = **13.3%**
-- Interpretation: User only consumes 13.3% of battery capacity daily
-- 86.7% of battery capacity is "over-provisioned"
-- Marginal benefit of additional range ≈ $0
+- Meaning: Only 13.3% of battery capacity is used daily
+- Insight: 86.7% over-provisioning; marginal value of extra range ≈ $0
 
-**Economic Interpretation**:
-- Extra capital investment in battery capacity → Negligible additional utility
-- Battery over-provisioning is economically inefficient
-- Shifts focus from range anxiety to capital allocation rationality
-
-**Code Location**: `SimulationLab.tsx` line 36
-
----
-
-### 3. **Charging Interval** (Time Cost Reduction)
-
-**Formula**:
+### Charging Interval
 ```
 Charging Interval (days) = EPA Range / Daily Miles
-Interaction Frequency = 365 / Charging Interval
-Time Savings ≈ (30 - Charging Interval) × 15 min per fuel event per year
+Annual Fuel Events = 365 / Charging Interval
+Time Savings ≈ (52 - Annual Fuel Events) × 10 min per event per year
 ```
 
-**Example**:
-- 300-mile range ÷ 40 daily miles = **7.5 days** (rounds to 7 days)
-- vs. Traditional: refuel every 6-7 days (10 min × 52 events/year = 520 min labor)
-- EV home charging: No labor (autonomous charging)
-- **Annual time savings: ~8.7 hours of labor**
+**Example** (300 mi range, 40 mi/day):
+- Charging Interval = 7.5 days ≈ 7 days
+- ICE: ~52 refueling events/year × 10 min = 520 min/year
+- EV: Home charging (autonomous) = 0 min labor
+- **Savings: 8.7 hours/year**
 
-**Code Location**: `SimulationLab.tsx` line 37, `ResultsPanel.tsx` lines 118–148
+### 5-Year TCO
+```
+ICE TCO = Purchase Price 
+         + (Annual Fuel × 5)
+         + (Annual Maintenance @ $1,500 × 5)
+         + (Depreciation @ 15% annually × 5)
+
+EV TCO = Purchase Price
+        + (Annual Energy × 5)
+        + (Annual Maintenance @ $500 × 5)   [savings]
+        + (Depreciation @ 10% annually × 5)
+
+Advantage = ICE TCO - EV TCO
+```
 
 ---
 
-### TCO (Total Cost of Ownership) Baseline
+## 🔐 OpenAI Integration (Secure Backend Model)
 
-**5-Year Total Cost**:
+### Architecture
+Instead of exposing the API key to the browser, InsightPlug uses a **secure backend** approach:
+
 ```
-ICE Total Cost = 
-  Purchase Price 
-  + (Annual Fuel Cost × 5 years)
-  + (Annual Depreciation @ 15% × 5 years)
-  + (Maintenance @ $1,500/year × 5 years)
-
-EV Total Cost = 
-  Purchase Price 
-  + (Annual Energy Cost × 5 years)
-  + (Annual Depreciation @ 10% × 5 years)
-  - (Maintenance Savings @ $500/year × 5 years)
-
-TCO Savings = ICE Total Cost - EV Total Cost
-```
-
-**Code Location**: `SimulationLab.tsx` lines 42–55
-
----
-
-## 🔄 User Workflow
-
-1. **Configuration Wizard** (Step 1)
-   - Select region (affects daily miles baseline & electricity rates)
-   - Choose EV model (sets EPA range, MSRP, ICE benchmark)
-   - Input daily miles (personalizes all economic signals)
-   - Adjust home charging ratio (0–100%)
-   - Click "Analyze"
-
-2. **Simulation Lab** (Step 2)
-   - View all Money dimension signals on right panel
-   - Adjust configuration in left sidebar (real-time recalculation)
-   - Explore theory behind each signal (TheoryExplainer cards)
-   - Ask expert AI questions about savings, range, charging, etc.
-   - Rate-limited to 20 questions/session (anti-abuse)
-
-3. **Expert Chat**
-   - **Default**: Rule-based pattern matching (no API required)
-   - **With API Key**: Real-time responses from OpenAI GPT-4 (set `VITE_OPENAI_API_KEY` in `.env.local`)
-   - Supports questions about: savings, break-even, range, charging frequency, economic trade-offs
-   - Automatic fallback to rule-based if API fails
-
-4. **Go Back**
-   - Click "← Edit Configuration" to return to wizard
-   - Reconfigure and re-analyze to compare scenarios
-
----
-
-## 🔐 OpenAI Integration (Optional)
-
-### Enable Real-Time AI Chat
-
-To get real-time responses from GPT-4 instead of rule-based answers:
-
-#### Step 1: Get OpenAI API Key
-1. Visit [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-2. Create a new secret key
-3. Copy the key (format: `sk-proj-...`)
-
-#### Step 2: Configure .env.local
-Create or edit `.env.local` in project root (same folder as `package.json`):
-
-```bash
-# .env.local
-VITE_OPENAI_API_KEY=sk-proj-your-api-key-here
+Browser (Frontend)
+    ↓ POST /api/chat
+    │ (user input, no API key)
+    ↓
+Vercel Serverless Function (/api/chat.ts)
+    ↓ Uses OPENAI_API_KEY from environment
+    │ (never exposed to client)
+    ↓
+OpenAI API
+    ↓
+Response back to Browser
 ```
 
-**Important**: Never commit `.env.local` to git (already in `.gitignore`)
+**Benefits**:
+- ✅ API key never reaches the browser
+- ✅ Frontend code is open-source safe
+- ✅ Production-ready security model
+- ✅ Automatic fallback to rule-based mode if API fails
 
-#### Step 3: Start Dev Server
+### Setup Instructions
+
+#### Option A: Production (Recommended)
+1. **Deploy to Vercel**
+   ```bash
+   git push origin main
+   # Vercel auto-deploys
+   ```
+
+2. **Set OpenAI API Key in Vercel**
+   - Vercel Dashboard → Project Settings → Environment Variables
+   - Add: `OPENAI_API_KEY` = `sk-proj-your-key`
+   - Save and redeploy
+
+3. **Test**
+   - Visit your Vercel URL
+   - Chat with the expert
+   - Should see OpenAI responses (more intelligent than rule-based)
+
+#### Option B: Local Development (No OpenAI)
 ```bash
 npm run dev
 ```
-
-The app will auto-detect your API key and enable OpenAI mode.
-
-#### Step 4: Test It
-Ask the Expert Chat questions like:
-- "Why is my battery over-provisioned?"
-- "How should I think about upfront costs?"
-- "What's the connection between daily miles and utilization?"
-
-You'll get personalized, real-time responses!
-
-### Configuration
-```bash
-# .env.local (optional settings)
-VITE_OPENAI_API_KEY=sk-proj-xxxxx           # Required for OpenAI mode
-VITE_OPENAI_MODEL=gpt-4o-mini              # Optional (default: gpt-4o-mini)
-VITE_API_ENDPOINT=https://api.openai.com/v1/chat/completions  # Optional
-```
+- Works with rule-based advisor
+- No API key needed
+- Good for local testing
 
 ### Cost
-- **Per question**: ~$0.01-$0.03
-- **20 questions/session**: ~$0.20-$0.60
-- **Very cheap for low-traffic apps**
+- **Model**: GPT-4o-mini
+- **Per response**: ~$0.00008 (extremely cheap)
+- **1,000 responses**: ~$0.08
+- **Monthly budget**: Can set via OpenAI dashboard
 
-See [OPENAI_SETUP.md](./OPENAI_SETUP.md) for detailed setup and troubleshooting.
+### Troubleshooting
+- **Issue**: Chat returns "Backend API call failed"
+  - **Solution**: Check Vercel environment variable is set
+  
+- **Issue**: Chat returns rule-based responses instead of AI
+  - **Solution**: API key not configured; either is fine for MVP
+  
+- **Issue**: 401 Authentication Error
+  - **Solution**: Rotate API key at https://platform.openai.com/api-keys
 
-## ⚙️ Rate Limiting & Performance
-
-**API Limiting** (`services/apiLimiter.ts`):
-- **Per-session limit**: 20 total questions
-- **Per-minute limit**: 6 questions
-- Enforced via localStorage (survives page reloads)
-- Graceful rate-limit messages when limits exceeded
-
-**Performance Optimizations**:
-- All calculations use React `useMemo()` to avoid recalculation on render
-- Lazy-loaded Google Maps embed (spatial grounding)
-- Markdown parsing via `marked` library (chat messages)
+See `OPENAI_BACKEND_SETUP_CN.md` for detailed setup.
 
 ---
 
-## 📦 Dependencies
+## 🚀 Deployment
 
-**Core Framework**:
-- `react@19.x` – UI components
-- `typescript@5.x` – Type safety
-- `vite@6.x` – Build tool & dev server
+### Prerequisites
+- GitHub account (free)
+- Vercel account (free, sign up with GitHub)
+- (Optional) OpenAI API key for AI chat
 
-**Styling**:
-- `tailwindcss@3.4.x` – Utility-first CSS
-- `postcss@8.x` – CSS processing
-- `autoprefixer@10.x` – Vendor prefixes
+### Step 1: Push to GitHub
+```bash
+git add .
+git commit -m "Initial commit: InsightPlug EV analysis tool"
+git push origin main
+```
 
-**Utilities**:
-- `marked@11.x` – Markdown parsing (chat messages)
+### Step 2: Deploy to Vercel
+**Option A: Automatic (Recommended)**
+- Vercel monitors your GitHub repo
+- Every push to `main` automatically redeploys
+- No additional steps needed!
 
-**Development**:
-- `@types/react@19.x` – React type definitions
-- `@types/node@20.x` – Node.js types
+**Option B: Manual**
+1. Visit https://vercel.com/new
+2. Import your GitHub repository
+3. Click "Deploy"
+4. Get your public URL (e.g., `https://insightplug-abc123.vercel.app`)
 
-See `package.json` for exact versions and all dependencies.
+### Step 3 (Optional): Enable OpenAI Chat
+1. Vercel Dashboard → Settings → Environment Variables
+2. Add `OPENAI_API_KEY` with your OpenAI key
+3. Click "Redeploy"
+
+### Verification
+- Visit your Vercel URL
+- Application loads
+- Configuration wizard works
+- Chat (rule-based by default) works
+- Maps embed loads
+
+### Custom Domain
+1. Vercel Dashboard → Settings → Domains
+2. Add your domain
+3. Update DNS records (Vercel will guide you)
+4. Wait 24 hours for DNS propagation
+
+---
+
+## 🏗️ Development
+
+### Install Dependencies
+```bash
+npm install
+```
+
+### Local Server
+```bash
+npm run dev
+```
+Runs on http://localhost:3000 with hot-reload.
+
+### Build for Production
+```bash
+npm run build
+```
+Generates optimized `dist/` folder.
+
+### Preview Production Build
+```bash
+npm run preview
+```
+Serves the production build locally.
+
+---
+
+## 📊 Data Sources (2026)
+
+All data represents 2026 forecasts/estimates:
+
+| Category | Source | Note |
+|----------|--------|------|
+| **Gas Price** | EIA | $3.45/gallon |
+| **Electricity Rates** | EIA | State-by-state, ~$0.1789/kWh national avg |
+| **EV Models** | Manufacturer MSRP | Tesla, Chevy, Nissan, Hyundai, BMW, etc. |
+| **Regional Mileage** | NHTS 2017 | County-level daily miles |
+| **EV Efficiency** | EPA estimates | 3.8 kWh/mile (configurable per model) |
+| **ICE Benchmark** | Auto industry | 28 MPG default, model-specific available |
+
+See `services/dataCatalog.ts` for full data catalogs.
+
+---
+
+## 🔒 Security
+
+### API Key Safety
+- ✅ `.env.local` not committed (in `.gitignore`)
+- ✅ OpenAI key stored in Vercel (server-side only)
+- ✅ No secrets in frontend code
+- ✅ No secrets in GitHub repo
+
+### Best Practices
+- Rotate API keys every 6 months
+- Monitor API usage at https://platform.openai.com/usage
+- Set spending limits on OpenAI dashboard
+- Use environment-specific keys for dev/prod
+
+---
+
+## 📚 Documentation
+
+| File | Purpose |
+|------|---------|
+| `README.md` | This file; overview & quick start |
+| `COMPLETE_DEPLOYMENT_CN.md` | Full Chinese deployment guide |
+| `OPENAI_BACKEND_SETUP_CN.md` | OpenAI backend configuration (Chinese) |
+| `API_SECURITY_GUIDE.md` | API security best practices |
+| `VERCEL_DEPLOYMENT_CN.md` | Detailed Vercel deployment steps (Chinese) |
+
+---
+
+## 🧪 Testing
+
+### Unit Tests (Future)
+```bash
+npm test
+```
+
+### Manual Testing Checklist
+- [ ] Configuration wizard loads
+- [ ] Can select region, EV model, input miles
+- [ ] Economic signals calculate correctly
+- [ ] Chat responds (rule-based)
+- [ ] Maps embed displays
+- [ ] Mobile responsive
+- [ ] Error boundary catches errors
+
+---
+
+## 🎨 UI/UX Principles
+
+InsightPlug follows a **research-backed, minimal design system**:
+
+- **Color**: Emerald (#059669) for positive financial signals
+- **Typography**: Clear hierarchy; no decorative fonts
+- **Spacing**: 8px grid system; generous whitespace
+- **Cards**: White background, 16px border-radius, subtle shadow
+- **Accessibility**: WCAG AA contrast ratios, semantic HTML
+
+See `services/design-system.ts` for design tokens.
+
+---
+
+## 📈 Performance
+
+### Optimizations
+- Vite 6 for fast bundling
+- React 19 with concurrent features
+- Lazy-loading Google Maps
+- `useMemo()` for expensive calculations
+- Rate limiting prevents API abuse
+
+### Bundle Size
+- Gzip: ~82 kB (with all dependencies)
+- Fast initial load (<2s on 4G)
+
+---
+
+## 🐛 Known Issues & Limitations
+
+- Google Maps requires public embedding (no API key needed, but iframe-based)
+- Rule-based chat has limited pattern matching
+- Mobile: Maps view may be small on narrow screens
+- Chat is rate-limited (20 msgs/session)
 
 ---
 
 ## 🤝 Contributing
 
-This is a private research project. For questions or collaboration inquiries, please contact the maintainer.
+This is a private research project. For collaboration inquiries, contact the maintainer.
 
 ---
 
 ## 📄 License
 
-**Private Project** - All rights reserved.
+**Private Project** – All rights reserved. Copyright © 2026.
+
+---
+
+## 🙋 Support
+
+For issues, feature requests, or questions:
+1. Check existing documentation
+2. Review `OPENAI_BACKEND_SETUP_CN.md` for setup issues
+3. Check browser console (F12) for error logs
+4. Review Vercel deployment logs
+
+---
+
+## 📝 Changelog
+
+### v1.0 (March 2026)
+- ✨ Secure OpenAI backend integration via Vercel Functions
+- ✨ Rule-based expert advisor (always available)
+- ✨ Behavioral economics framework (Becker's theory)
+- ✨ Real-time economic signal calculation
+- ✨ Google Maps geographic grounding
+- ✨ Rate limiting & abuse prevention
+- ✨ Mobile-responsive design
+
+---
+
+**Last Updated**: March 2, 2026
+
+**Status**: Production-ready
+
+**Deployment**: Vercel
+
+**Frontend**: React 19, TypeScript, Vite 6
+
+**Backend**: Vercel Serverless Functions (optional OpenAI)

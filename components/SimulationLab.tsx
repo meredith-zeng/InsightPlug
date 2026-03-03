@@ -86,10 +86,10 @@ How can I help you optimize further?
           reply = await buildOpenAIReply(profile, calculateMetrics, text);
         } catch (openaiErr) {
           const errorMsg = openaiErr instanceof Error ? openaiErr.message : String(openaiErr);
-          if (errorMsg.includes('401') || errorMsg.includes('insufficient permissions')) {
+          if (errorMsg.includes('401') || errorMsg.includes('Authentication')) {
             setMessages(prev => [...prev, {
               role: 'model',
-              content: `⚠️ **OpenAI API Configuration Issue**\n\nYour API key lacks necessary permissions. Please:\n1. Visit [OpenAI API Keys](https://platform.openai.com/api-keys)\n2. Create a new key with "model.request" permission\n3. Update \`.env.local\` with the new key\n4. Restart the dev server\n\nFalling back to rule-based responses for now...`
+              content: `⚠️ **OpenAI API Configuration Issue**\n\nThe backend cannot access the OpenAI API key. Please:\n1. Visit your Vercel Dashboard → Project Settings → Environment Variables\n2. Ensure \`OPENAI_API_KEY\` is set with a valid key\n3. Redeploy the project\n\nFalling back to rule-based responses for now...`
             }]);
             await new Promise(resolve => setTimeout(resolve, 350));
           }
