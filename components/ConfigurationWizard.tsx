@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UserProfile } from '../types';
 import { EV_MODELS, REGIONS, ELECTRICITY_RATES } from '../services/dataCatalog';
 import { Icons } from '../constants';
@@ -10,7 +10,7 @@ interface ConfigurationWizardProps {
 }
 
 const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setProfile, onComplete }) => {
-  const selectedRegion = REGIONS.find(r => r.fips === profile.region.fips) || REGIONS[0];
+  const [showAboutModal, setShowAboutModal] = useState(false);
   const selectedEV = EV_MODELS.find(ev => ev.model === profile.ev.model) || EV_MODELS[0];
 
   return (
@@ -52,19 +52,48 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
                 </div>
               </div>
               <h1 className="text-3xl font-black text-slate-900 leading-tight mb-2">InsightPlug</h1>
-              <p className="text-sm text-slate-600">EV Economic Literacy Tool</p>
+              <p className="text-sm text-slate-600 mb-6">See how much time and money an EV actually saves you based on your daily routine</p>
+
+              {/* Simple benefit icons */}
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">💰</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">See Your Real Savings</h3>
+                    <p className="text-xs text-slate-600">Monthly fuel costs compared to gas</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">⚡</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">Forget the Gas Station!</h3>
+                    <p className="text-xs text-slate-600">Charge at home overnight while you sleep</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">📍</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">Your Local Area</h3>
+                    <p className="text-xs text-slate-600">Based on your state's electricity rates</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="text-xs text-slate-700 leading-relaxed space-y-2">
-              <p className="font-bold text-slate-800">About InsightPlug</p>
-              <p>
-                InsightPlug applies <strong>Becker's Household Production Theory</strong> to address consumer cost misperceptions about electric vehicles. Rather than overwhelming you with data, we surface three economically meaningful signals grounded in your local conditions:
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-slate-600">
-                <li><strong>Monthly Surplus</strong> - Immediate liquidity gains (combats temporal discounting)</li>
-                <li><strong>Daily Asset Utilization</strong> - Capital allocation efficiency</li>
-                <li><strong>Charging Interval</strong> - Labor reduction (combats time-intensive bias)</li>
-              </ul>
-              <p className="text-slate-500 italic text-[10px]">Research by Yulin Zeng, Sharon Hsiao, Yuhong Liu (Santa Clara University)</p>
+            <div className="text-center">
+              <button
+                onClick={() => setShowAboutModal(true)}
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold underline"
+              >
+                About this tool
+              </button>
             </div>
           </div>
         </div>
@@ -73,8 +102,8 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
         <div className="bg-white rounded-3xl shadow-xl border border-emerald-200 overflow-hidden">
           <div className="p-6 space-y-5">
             <div className="text-center">
-              <h2 className="text-2xl font-black text-slate-900">Quick Configuration</h2>
-              <p className="text-sm text-slate-600">Adjust and continue</p>
+              <h2 className="text-2xl font-black text-slate-900">Tell Us Your Routine</h2>
+              <p className="text-sm text-slate-600">See your personalized savings in seconds</p>
             </div>
 
             {/* Location */}
@@ -183,9 +212,78 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
           </div>
         </div>
       </div>
+
+      {/* About This Tool Modal */}
+      {showAboutModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowAboutModal(false)}>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-8" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="text-2xl font-black text-slate-900">About InsightPlug</h2>
+              <button onClick={() => setShowAboutModal(false)} className="text-slate-400 hover:text-slate-600 text-2xl font-bold">×</button>
+            </div>
+
+            <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
+              <p className="font-semibold text-slate-900">
+                InsightPlug helps you understand the real costs and benefits of electric vehicle ownership based on your personal routine.
+              </p>
+
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <h3 className="font-bold text-emerald-900 mb-2">🎓 Research Foundation</h3>
+                <p className="text-emerald-800 text-xs">
+                  This tool applies <strong>Gary Becker's Household Production Theory</strong> to address consumer cost misperceptions about electric vehicles.
+                  Rather than overwhelming you with data, we surface economically meaningful signals grounded in your local conditions.
+                </p>
+              </div>
+
+              <h3 className="font-bold text-slate-900 mt-6">What We Measure:</h3>
+
+              <div className="space-y-3">
+                <div className="border-l-4 border-emerald-500 pl-4">
+                  <h4 className="font-semibold text-slate-900">💰 Estimated Monthly Fuel Savings</h4>
+                  <p className="text-xs">Immediate savings you'll see each month (combats temporal discounting bias where people undervalue future savings)</p>
+                </div>
+
+                <div className="border-l-4 border-blue-500 pl-4">
+                  <h4 className="font-semibold text-slate-900">🔋 Daily Battery Usage</h4>
+                  <p className="text-xs">Shows how much of your battery capacity you actually use daily, helping you understand if you have enough range buffer</p>
+                </div>
+
+                <div className="border-l-4 border-purple-500 pl-4">
+                  <h4 className="font-semibold text-slate-900">⏱️ Charging Frequency</h4>
+                  <p className="text-xs">How often you need to charge vs how often you'd need to visit a gas station, quantifying time savings</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                <h3 className="font-bold text-blue-900 mb-2">📊 Data Sources</h3>
+                <p className="text-blue-800 text-xs">
+                  We use 2026 forecasts from the U.S. Energy Information Administration (EIA) for electricity and gas prices,
+                  EPA estimates for vehicle efficiency, and National Household Travel Survey data for regional driving patterns.
+                </p>
+              </div>
+
+              <p className="text-slate-500 italic text-xs pt-4 border-t border-slate-200">
+                Research by Yulin Zeng, Sharon Hsiao, Yuhong Liu (Santa Clara University)
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowAboutModal(false)}
+              className="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default ConfigurationWizard;
+
+
+
+
+
 

@@ -4,7 +4,6 @@ import { ELECTRICITY_RATES, EV_MODELS, REGIONS } from '../services/dataCatalog';
 import { buildExpertReply } from '../services/localAdvisor';
 import { buildOpenAIReply, isOpenAIConfigured } from '../services/openaiAdvisor';
 import { marked } from 'marked';
-import TheoryExplainer from './TheoryExplainer';
 import { Icons } from '../constants';
 import { createLimiter } from '../services/apiLimiter';
 
@@ -13,6 +12,7 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const [showAboutModal, setShowAboutModal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const limiterRef = useRef(createLimiter('insightplug-chat', { maxPerMinute: 6, maxTotal: 20 }));
 
@@ -228,43 +228,48 @@ How can I help you optimize further?
               </div>
             </div>
 
-            {/* Economic Framework Panel */}
+            {/* How It Works Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-900 mb-6 uppercase tracking-wide">Economic Model</h3>
-              <p className="text-xs text-gray-600 italic mb-6 pb-4 border-b border-gray-200">Two fundamental constraints shape EV adoption</p>
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">How It Works</h3>
+                <button
+                  onClick={() => setShowAboutModal(true)}
+                  className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold underline"
+                >
+                  Learn more
+                </button>
+              </div>
+              <p className="text-xs text-gray-600 italic mb-6 pb-4 border-b border-gray-200">
+                We compare your costs in two key areas
+              </p>
 
-              {/* Two Constraint Cards */}
+              {/* Two Simple Cards */}
               <div className="grid grid-cols-1 gap-4">
-                {/* MONEY Constraint Card */}
+                {/* MONEY Card */}
                 <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
                   <div className="flex items-start gap-3">
                     <div className="text-2xl">💰</div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-emerald-900 text-sm mb-1">Money</h4>
+                      <h4 className="font-semibold text-emerald-900 text-sm mb-1">Budget</h4>
                       <p className="text-xs text-emerald-700 leading-relaxed">
-                        Budget constraint limits transport spending. EV adoption reduces fuel cost, freeing capital.
+                        How much you'll spend on fuel each month
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* TIME Constraint Card */}
+                {/* TIME Card */}
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
                   <div className="flex items-start gap-3">
                     <div className="text-2xl">⏱️</div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-blue-900 text-sm mb-1">Time</h4>
+                      <h4 className="font-semibold text-blue-900 text-sm mb-1">Convenience</h4>
                       <p className="text-xs text-blue-700 leading-relaxed">
-                        Time constraint limits refueling transactions. Home charging eliminates gas station visits.
+                        How often you need to refuel or recharge
                       </p>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Source attribution */}
-              <div className="text-xs text-gray-500 mt-5 pt-5 border-t border-gray-200">
-                Based on Gary Becker's Time-Allocation Model
               </div>
             </div>
           </div>
@@ -272,7 +277,59 @@ How can I help you optimize further?
           {/* ===== RIGHT COLUMN: MONEY & TIME Dimensions (9 columns) ===== */}
           <div className="lg:col-span-9 space-y-10">
 
-            {/* ===== SECTION 1: MONEY DIMENSION ===== */}
+            {/* Recommendation Banner */}
+            {(() => {
+              const isHighSavings = calculateMetrics.monthlySurplus >= 50;
+              const isGoodUtilization = calculateMetrics.dailyAssetUtilization < 50;
+              const isEasyCharging = calculateMetrics.interval >= 5;
+              const overallGood = (isHighSavings && isGoodUtilization) || (isHighSavings && isEasyCharging);
+
+              return (
+                <div className={`rounded-2xl p-6 border-2 ${
+                  overallGood 
+                    ? 'bg-emerald-50 border-emerald-200' 
+                    : calculateMetrics.monthlySurplus > 0 
+                      ? 'bg-blue-50 border-blue-200' 
+                      : 'bg-orange-50 border-orange-200'
+                }`}>
+                  <div className="flex items-start gap-4">
+                    <div className="text-4xl">
+                      {overallGood ? '✅' : calculateMetrics.monthlySurplus > 0 ? '💡' : '⚠️'}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className={`text-xl font-bold mb-2 ${
+                        overallGood 
+                          ? 'text-emerald-900' 
+                          : calculateMetrics.monthlySurplus > 0 
+                            ? 'text-blue-900' 
+                            : 'text-orange-900'
+                      }`}>
+                        {overallGood
+                          ? `An Electric ${profile.ev.label.split(' ')[0]} is a highly cost-effective choice for your routine!`
+                          : calculateMetrics.monthlySurplus > 0
+                            ? `An Electric ${profile.ev.label.split(' ')[0]} could work well for you with some planning`
+                            : 'Electric vehicles may be challenging for your current situation'}
+                      </h3>
+                      <p className={`text-sm ${
+                        overallGood 
+                          ? 'text-emerald-700' 
+                          : calculateMetrics.monthlySurplus > 0 
+                            ? 'text-blue-700' 
+                            : 'text-orange-700'
+                      }`}>
+                        {overallGood
+                          ? `You'll save $${calculateMetrics.monthlySurplus}/month and only need to charge every ${calculateMetrics.interval} days. Your daily ${profile.dailyMiles.toFixed(0)}-mile routine is perfect for EV ownership.`
+                          : calculateMetrics.monthlySurplus > 0
+                            ? `You'll save $${calculateMetrics.monthlySurplus}/month. ${calculateMetrics.dailyAssetUtilization > 70 ? 'You may need to charge frequently.' : 'Consider your charging access carefully.'}`
+                            : `Based on your ${profile.dailyMiles.toFixed(0)}-mile daily routine and local electricity rates, a gas vehicle may currently be more economical. Electricity costs $${calculateMetrics.efficientCost}/mo vs gas at $${calculateMetrics.legacyCost}/mo.`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ===== SECTION 1: BUDGET & SAVINGS ===== */}
             <div>
               <div className="mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900">Money Dimension</h2>
@@ -325,32 +382,38 @@ How can I help you optimize further?
                       </div>
                     </div>
                   </div>
-
-                  {/* Local Grounding */}
-                  <div className="text-xs text-gray-500 border-t border-gray-200 pt-4">
-                    Grounded in {profile.region.name}, {profile.region.state} + your {Math.round(profile.annualMileage / 365)} mi/day pattern
-                  </div>
                 </div>
 
                 {/* Card B: Daily Asset Utilization */}
                 <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col">
                   {/* Header */}
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Daily Asset Utilization</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Daily Battery Usage</h3>
                   </div>
 
-                  {/* Primary Metric */}
+                  {/* Primary Metric with Status Badge */}
                   <div className="mb-4">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-5xl font-bold text-gray-900">{calculateMetrics.dailyAssetUtilization.toFixed(1)}</span>
-                      <span className="text-lg font-medium text-gray-500">%</span>
+                    <div className="flex items-start gap-3 flex-wrap">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-5xl font-bold text-gray-900">{calculateMetrics.dailyAssetUtilization.toFixed(1)}</span>
+                        <span className="text-lg font-medium text-gray-500">%</span>
+                      </div>
+                      {calculateMetrics.dailyAssetUtilization < 30 && (
+                        <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full self-center">✓ Excellent range buffer</span>
+                      )}
+                      {calculateMetrics.dailyAssetUtilization >= 30 && calculateMetrics.dailyAssetUtilization < 70 && (
+                        <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full self-center">✓ Well balanced</span>
+                      )}
+                      {calculateMetrics.dailyAssetUtilization >= 70 && (
+                        <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full self-center">⚠ May need frequent charging</span>
+                      )}
                     </div>
                   </div>
 
                   {/* Context Explanation */}
                   <div className="mb-6">
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      Measures capital efficiency of your battery capacity.
+                      You use {calculateMetrics.dailyAssetUtilization.toFixed(1)}% of battery per day, leaving plenty of range for unexpected trips.
                     </p>
                   </div>
 
@@ -368,11 +431,6 @@ How can I help you optimize further?
                     <div className="text-xs text-gray-600">
                       Range available: <span className="font-semibold">{profile.ev.epaRange} mi</span>
                     </div>
-                  </div>
-
-                  {/* Local Grounding */}
-                  <div className="text-xs text-gray-500 border-t border-gray-200 pt-4">
-                    Grounded in {profile.region.name}, {profile.region.state} + your {Math.round(profile.annualMileage / 365)} mi/day pattern
                   </div>
                 </div>
               </div>
@@ -470,14 +528,14 @@ How can I help you optimize further?
                   </div>
                 </div>
 
-                {/* Spatial Grounding: Map Panel (Subordinate) */}
+                {/* Map Panel */}
                 <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                   <div className="mb-4">
                     <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
                       <Icons.MapPin className="w-5 h-5 text-gray-500" />
-                      Spatial Grounding — Local Charging Availability
+                      Nearby Charging Stations
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">Supporting evidence for access friction assessment</p>
+                    <p className="text-xs text-gray-500 mt-1">Charging stations available in {profile.region.name}, {profile.region.state}</p>
                   </div>
 
                   <div className="rounded-xl overflow-hidden bg-gray-50 border border-gray-200" style={{minHeight: '300px'}}>
@@ -493,7 +551,7 @@ How can I help you optimize further?
 
                   <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600">
                     <p>
-                      Map shows available EV charging stations. Use to identify charger density and proximity for your daily commute and long trips.
+                      Map shows available EV charging stations near you for both daily use and longer trips.
                     </p>
                   </div>
                 </div>
@@ -583,9 +641,77 @@ How can I help you optimize further?
         </div>
       </div>
 
+      {/* About This Tool Modal */}
+      {showAboutModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowAboutModal(false)}>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-8" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <h2 className="text-2xl font-black text-slate-900">About InsightPlug</h2>
+              <button onClick={() => setShowAboutModal(false)} className="text-slate-400 hover:text-slate-600 text-2xl font-bold">×</button>
+            </div>
+
+            <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
+              <p className="font-semibold text-slate-900">
+                InsightPlug helps you understand the real costs and benefits of electric vehicle ownership based on your personal routine.
+              </p>
+
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <h3 className="font-bold text-emerald-900 mb-2">🎓 Research Foundation</h3>
+                <p className="text-emerald-800 text-xs">
+                  This tool applies <strong>Gary Becker's Household Production Theory</strong> to address consumer cost misperceptions about electric vehicles.
+                  Rather than overwhelming you with data, we surface economically meaningful signals grounded in your local conditions.
+                </p>
+              </div>
+
+              <h3 className="font-bold text-slate-900 mt-6">What We Measure:</h3>
+
+              <div className="space-y-3">
+                <div className="border-l-4 border-emerald-500 pl-4">
+                  <h4 className="font-semibold text-slate-900">💰 Estimated Monthly Fuel Savings</h4>
+                  <p className="text-xs">Immediate savings you'll see each month (combats temporal discounting bias where people undervalue future savings)</p>
+                </div>
+
+                <div className="border-l-4 border-blue-500 pl-4">
+                  <h4 className="font-semibold text-slate-900">🔋 Daily Battery Usage</h4>
+                  <p className="text-xs">Shows how much of your battery capacity you actually use daily, helping you understand if you have enough range buffer</p>
+                </div>
+
+                <div className="border-l-4 border-purple-500 pl-4">
+                  <h4 className="font-semibold text-slate-900">⏱️ Charging Frequency</h4>
+                  <p className="text-xs">How often you need to charge vs how often you'd need to visit a gas station, quantifying time savings</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                <h3 className="font-bold text-blue-900 mb-2">📊 Data Sources</h3>
+                <p className="text-blue-800 text-xs">
+                  We use 2026 forecasts from the U.S. Energy Information Administration (EIA) for electricity and gas prices,
+                  EPA estimates for vehicle efficiency, and National Household Travel Survey data for regional driving patterns.
+                </p>
+              </div>
+
+              <p className="text-slate-500 italic text-xs pt-4 border-t border-slate-200">
+                Research by Yulin Zeng, Sharon Hsiao, Yuhong Liu (Santa Clara University)
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowAboutModal(false)}
+              className="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
 
 export default SimulationLab;
+
+
+
+
 
