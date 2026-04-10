@@ -7,6 +7,11 @@ import { marked } from 'marked';
 import { Icons } from '../constants';
 import { createLimiter } from '../services/apiLimiter';
 
+const formatSignedCurrency = (value: number): string => {
+  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+  return `${sign}$${Math.abs(value)}`;
+};
+
 const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfile) => void }> = ({ profile, setProfile }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -50,7 +55,7 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
 I've analyzed your mobility constraints:
 
 *   **Time Gain**: Refuel every **${calculateMetrics.interval} days**.
-*   **Cash Flow**: Recapture **$${calculateMetrics.monthlySurplus}** monthly.
+*   **Cash Flow**: Recapture **${formatSignedCurrency(calculateMetrics.monthlySurplus)}** monthly.
 *   **Asset Use**: **${calculateMetrics.dailyAssetUtilization.toFixed(1)}%** daily utilization.
 
 How can I help you optimize further?
@@ -318,9 +323,9 @@ How can I help you optimize further?
                             : 'text-orange-700'
                       }`}>
                         {overallGood
-                          ? `You'll save $${calculateMetrics.monthlySurplus}/month and only need to charge every ${calculateMetrics.interval} days. Your daily ${profile.dailyMiles.toFixed(0)}-mile routine is perfect for EV ownership.`
+                          ? `You'll save ${formatSignedCurrency(calculateMetrics.monthlySurplus).replace('+', '')}/month and only need to charge every ${calculateMetrics.interval} days. Your daily ${profile.dailyMiles.toFixed(0)}-mile routine is perfect for EV ownership.`
                           : calculateMetrics.monthlySurplus > 0
-                            ? `You'll save $${calculateMetrics.monthlySurplus}/month. ${calculateMetrics.dailyAssetUtilization > 70 ? 'You may need to charge frequently.' : 'Consider your charging access carefully.'}`
+                            ? `You'll save ${formatSignedCurrency(calculateMetrics.monthlySurplus).replace('+', '')}/month. ${calculateMetrics.dailyAssetUtilization > 70 ? 'You may need to charge frequently.' : 'Consider your charging access carefully.'}`
                             : `Based on your ${profile.dailyMiles.toFixed(0)}-mile daily routine and local electricity rates, a gas vehicle may currently be more economical. Electricity costs $${calculateMetrics.efficientCost}/mo vs gas at $${calculateMetrics.legacyCost}/mo.`}
                       </p>
                     </div>
@@ -349,7 +354,9 @@ How can I help you optimize further?
                   {/* Primary Metric */}
                   <div className="mb-4">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-5xl font-bold text-emerald-600">+${calculateMetrics.monthlySurplus}</span>
+                      <span className={`text-5xl font-bold ${calculateMetrics.monthlySurplus >= 0 ? 'text-emerald-600' : 'text-orange-600'}`}>
+                        {formatSignedCurrency(calculateMetrics.monthlySurplus)}
+                      </span>
                       <span className="text-lg font-medium text-gray-500">/mo</span>
                     </div>
                   </div>
@@ -710,7 +717,6 @@ How can I help you optimize further?
 };
 
 export default SimulationLab;
-
 
 
 
