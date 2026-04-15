@@ -420,8 +420,8 @@ How can I help you optimize further?
                 <p className="text-sm text-gray-600 mt-1">Labor & Access Cost Reduction</p>
               </div>
 
-              {/* Charging Interval + Map */}
-              <div className="space-y-5">
+              {/* Charging Interval + Map — side by side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* Card: Charging Interval */}
                 <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col">
