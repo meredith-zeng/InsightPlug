@@ -1,8 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { UserProfile, ChatMessage } from '../types';
 import { ELECTRICITY_RATES, EV_MODELS, REGIONS } from '../services/dataCatalog';
-import { buildExpertReply } from '../services/localAdvisor';
-import { buildOpenAIReply, isOpenAIConfigured } from '../services/openaiAdvisor';
+import { buildOpenAIReply } from '../services/openaiAdvisor';
 import { marked } from 'marked';
 import { Icons } from '../constants';
 import { createLimiter } from '../services/apiLimiter';
@@ -22,8 +21,6 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
   const limiterRef = useRef(createLimiter('insightplug-chat', { maxPerMinute: 6, maxTotal: 20 }));
 
   const PUBLIC_RATE_MULTIPLIER = 2.5;
-  const USE_OPENAI = isOpenAIConfigured();
-
   const calculateMetrics = useMemo(() => {
     const milesPerMonth = profile.dailyMiles * 30.4;
 
@@ -84,45 +81,18 @@ How can I help you optimize further?
     setChatInput('');
     setIsTyping(true);
     try {
-      let reply: string;
-
-      if (USE_OPENAI) {
-        try {
-          reply = await buildOpenAIReply(profile, calculateMetrics, text);
-        } catch (openaiErr) {
-          const errorMsg = openaiErr instanceof Error ? openaiErr.message : String(openaiErr);
-          if (errorMsg.includes('401') || errorMsg.includes('Authentication')) {
-            setMessages(prev => [...prev, {
-              role: 'model',
-              content: `⚠️ **OpenAI API Configuration Issue**\n\nThe backend cannot access the OpenAI API key. Please:\n1. Visit your Vercel Dashboard → Project Settings → Environment Variables\n2. Ensure \`OPENAI_API_KEY\` is set with a valid key\n3. Redeploy the project\n\nFalling back to rule-based responses for now...`
-            }]);
-            await new Promise(resolve => setTimeout(resolve, 350));
-          }
-          reply = buildExpertReply(profile, calculateMetrics, text);
-        }
-      } else {
-        reply = buildExpertReply(profile, calculateMetrics, text);
-      }
-
+      const reply = await buildOpenAIReply(profile, calculateMetrics, text);
       await new Promise(resolve => setTimeout(resolve, 350));
       setMessages(prev => [...prev, { role: 'model', content: reply }]);
     } catch (err) {
-      // Silent error handling
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setMessages(prev => [...prev, { role: 'model', content: `⚠️ ${errorMsg}` }]);
     } finally {
       setIsTyping(false);
     }
   };
 
   const mapUrl = `https://www.google.com/maps?q=electric+vehicle+charging+stations+in+${encodeURIComponent(profile.region.name).replace(/%20/g, '+').replace(/%28/g, '').replace(/%29/g, '')},+${profile.region.state}&output=embed`;
-
-  // Calculate access friction (simplified: based on charger availability and detour)
-  const accessFriction = useMemo(() => {
-    // Base estimate: longer daily miles = more potential friction
-    const homeChargeDeficit = (1 - profile.homeChargingRatio) * 100;
-    const estimatedDetourMiles = Math.max(0, (homeChargeDeficit / 100) * 2);
-    const avgDetourMinutes = Math.round(estimatedDetourMiles * 2.5); // ~2.5 min per mile
-    return { detourMinutes: avgDetourMinutes, homeChargingPercent: Math.round(profile.homeChargingRatio * 100) };
-  }, [profile.homeChargingRatio]);
 
   return (
     <div className="relative w-full" style={{ backgroundColor: '#F9FAFB', minHeight: '100vh' }}>
@@ -310,9 +280,9 @@ How can I help you optimize further?
                             : 'text-orange-900'
                       }`}>
                         {overallGood
-                          ? `An Electric ${profile.ev.label.split(' ')[0]} is a highly cost-effective choice for your routine!`
+                          ? `An Electric Vehicle is a highly cost-effective choice for your routine!`
                           : calculateMetrics.monthlySurplus > 0
-                            ? `An Electric ${profile.ev.label.split(' ')[0]} could work well for you with some planning`
+                            ? `An Electric Vehicle could work well for you with some planning`
                             : 'Electric vehicles may be challenging for your current situation'}
                       </h3>
                       <p className={`text-sm ${
@@ -325,7 +295,7 @@ How can I help you optimize further?
                         {overallGood
                           ? `You'll save ${formatSignedCurrency(calculateMetrics.monthlySurplus).replace('+', '')}/month and only need to charge every ${calculateMetrics.interval} days. Your daily ${profile.dailyMiles.toFixed(0)}-mile routine is perfect for EV ownership.`
                           : calculateMetrics.monthlySurplus > 0
-                            ? `You'll save ${formatSignedCurrency(calculateMetrics.monthlySurplus).replace('+', '')}/month. ${calculateMetrics.dailyAssetUtilization > 70 ? 'You may need to charge frequently.' : 'Consider your charging access carefully.'}`
+                            ? `You'll save ${formatSignedCurrency(calculateMetrics.monthlySurplus).replace('+', '')}/month.${calculateMetrics.dailyAssetUtilization > 70 ? ' You may need to charge frequently.' : ''}`
                             : `Based on your ${profile.dailyMiles.toFixed(0)}-mile daily routine and local electricity rates, a gas vehicle may currently be more economical. Electricity costs $${calculateMetrics.efficientCost}/mo vs gas at $${calculateMetrics.legacyCost}/mo.`}
                       </p>
                     </div>
@@ -450,88 +420,45 @@ How can I help you optimize further?
                 <p className="text-sm text-gray-600 mt-1">Labor & Access Cost Reduction</p>
               </div>
 
-              {/* Three Component Layout: Charging Interval | Access Friction + Map */}
+              {/* Charging Interval + Map */}
               <div className="space-y-5">
 
-                {/* Cards Row: Charging Interval & Access Friction */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Card: Charging Interval */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col">
+                  {/* Header */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Charging Interval</h3>
+                  </div>
 
-                  {/* Card A: Charging Interval */}
-                  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col">
-                    {/* Header */}
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Charging Interval</h3>
+                  {/* Primary Metric */}
+                  <div className="mb-4">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-5xl font-bold text-gray-900">Every</span>
                     </div>
-
-                    {/* Primary Metric */}
-                    <div className="mb-4">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold text-gray-900">Every</span>
-                      </div>
-                      <div className="flex items-baseline gap-1 mt-2">
-                        <span className="text-6xl font-bold text-blue-600">{calculateMetrics.interval}</span>
-                        <span className="text-lg font-medium text-gray-500">days</span>
-                      </div>
-                    </div>
-
-                    {/* Context Explanation */}
-                    <div className="mb-6">
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        Estimated recharge frequency based on battery capacity and daily mileage.
-                      </p>
-                    </div>
-
-                    {/* Micro Visual: Timeline Chip */}
-                    <div className="mb-6">
-                      <div className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                        <Icons.Zap className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-semibold text-blue-700">{Math.round(30 / calculateMetrics.interval)} charges/month</span>
-                      </div>
-                    </div>
-
-                    {/* Local Grounding */}
-                    <div className="text-xs text-gray-500 border-t border-gray-200 pt-4">
-                      Grounded in {profile.region.name}, {profile.region.state} + your {Math.round(profile.annualMileage / 365)} mi/day pattern
+                    <div className="flex items-baseline gap-1 mt-2">
+                      <span className="text-6xl font-bold text-blue-600">{calculateMetrics.interval}</span>
+                      <span className="text-lg font-medium text-gray-500">days</span>
                     </div>
                   </div>
 
-                  {/* Card B: Access Friction */}
-                  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col">
-                    {/* Header */}
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Access Friction</h3>
-                    </div>
+                  {/* Context Explanation */}
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      Estimated recharge frequency based on battery capacity and daily mileage.
+                    </p>
+                  </div>
 
-                    {/* Primary Metric */}
-                    <div className="mb-4">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-5xl font-bold text-blue-600">+{accessFriction.detourMinutes}</span>
-                        <span className="text-lg font-medium text-gray-500">min avg detour</span>
-                      </div>
+                  {/* Micro Visual: Timeline Chip */}
+                  <div className="mb-6">
+                    <div className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Icons.Zap className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-semibold text-blue-700">{Math.round(30 / calculateMetrics.interval)} charges/month</span>
                     </div>
+                  </div>
 
-                    {/* Context Explanation */}
-                    <div className="mb-6">
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        Additional time cost driven by charger availability and detour distance.
-                      </p>
-                    </div>
-
-                    {/* Micro Visual: Supporting Metrics */}
-                    <div className="mb-6 space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Home charging access</span>
-                        <span className="font-semibold text-gray-900">{accessFriction.homeChargingPercent}%</span>
-                      </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-600" style={{width: `${accessFriction.homeChargingPercent}%`}}></div>
-                      </div>
-                    </div>
-
-                    {/* Local Grounding */}
-                    <div className="text-xs text-gray-500 border-t border-gray-200 pt-4">
-                      Grounded in {profile.region.name}, {profile.region.state} + your {Math.round(profile.annualMileage / 365)} mi/day pattern
-                    </div>
+                  {/* Local Grounding */}
+                  <div className="text-xs text-gray-500 border-t border-gray-200 pt-4">
+                    Grounded in {profile.region.name}, {profile.region.state} + your {Math.round(profile.annualMileage / 365)} mi/day pattern
                   </div>
                 </div>
 
@@ -657,7 +584,7 @@ How can I help you optimize further?
               <button onClick={() => setShowAboutModal(false)} className="text-slate-400 hover:text-slate-600 text-2xl font-bold">×</button>
             </div>
 
-            <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
+            <div className="space-y-5 text-sm text-slate-700 leading-relaxed">
               <p className="font-semibold text-slate-900">
                 InsightPlug helps you understand the real costs and benefits of electric vehicle ownership based on your personal routine.
               </p>
@@ -670,31 +597,60 @@ How can I help you optimize further?
                 </p>
               </div>
 
-              <h3 className="font-bold text-slate-900 mt-6">What We Measure:</h3>
+              {/* Formulas */}
+              <h3 className="font-bold text-slate-900">🧮 How We Calculate</h3>
 
               <div className="space-y-3">
                 <div className="border-l-4 border-emerald-500 pl-4">
-                  <h4 className="font-semibold text-slate-900">💰 Estimated Monthly Fuel Savings</h4>
-                  <p className="text-xs">Immediate savings you'll see each month (combats temporal discounting bias where people undervalue future savings)</p>
+                  <h4 className="font-semibold text-slate-900 mb-1">💰 Monthly Fuel Savings</h4>
+                  <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
+                    <div>Gas cost = (miles/month ÷ MPG) × gas price</div>
+                    <div>EV cost = (miles/month ÷ mi/kWh) × blended rate</div>
+                    <div className="mt-1 font-bold">Savings = Gas cost − EV cost</div>
+                  </div>
+                  <p className="text-xs text-slate-500">Blended rate = home % × residential rate + public % × residential rate × 2.5. Public charging averages ~2.5× home rates.</p>
                 </div>
 
                 <div className="border-l-4 border-blue-500 pl-4">
-                  <h4 className="font-semibold text-slate-900">🔋 Daily Battery Usage</h4>
-                  <p className="text-xs">Shows how much of your battery capacity you actually use daily, helping you understand if you have enough range buffer</p>
+                  <h4 className="font-semibold text-slate-900 mb-1">🔋 Daily Battery Usage (DAU)</h4>
+                  <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
+                    DAU = (daily miles ÷ EPA range) × 100%
+                  </div>
+                  <p className="text-xs text-slate-500">Low DAU means the vehicle is over-provisioned — you're paying for more range than your routine needs.</p>
                 </div>
 
                 <div className="border-l-4 border-purple-500 pl-4">
-                  <h4 className="font-semibold text-slate-900">⏱️ Charging Frequency</h4>
-                  <p className="text-xs">How often you need to charge vs how often you'd need to visit a gas station, quantifying time savings</p>
+                  <h4 className="font-semibold text-slate-900 mb-1">⏱️ Charging Interval</h4>
+                  <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
+                    Interval = floor(EPA range ÷ daily miles) days
+                  </div>
+                  <p className="text-xs text-slate-500">Estimated days between home charges at your driving pace.</p>
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-                <h3 className="font-bold text-blue-900 mb-2">📊 Data Sources</h3>
-                <p className="text-blue-800 text-xs">
-                  We use 2026 forecasts from the U.S. Energy Information Administration (EIA) for electricity and gas prices,
-                  EPA estimates for vehicle efficiency, and National Household Travel Survey data for regional driving patterns.
-                </p>
+              {/* Data Sources */}
+              <h3 className="font-bold text-slate-900">📊 Data Sources</h3>
+
+              <div className="space-y-2 text-xs">
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">Daily Miles per Capita</div>
+                  <div className="text-slate-500">Federal Highway Administration (FHWA) — county-level average daily miles traveled per person. Used as your region's baseline driving figure.</div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">Residential Electricity Rates</div>
+                  <div className="text-slate-500">EIA <em>Electric Power Monthly</em>, Table 5.6.A — Average Price by State, December 2025 (preliminary). Updated monthly. NY: 22.24 ¢/kWh · CA: 29.51 ¢/kWh · TX: 14.46 ¢/kWh.</div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">Gasoline Price</div>
+                  <div className="text-slate-500">EIA Weekly Retail Gasoline Prices — U.S. regular conventional average. Default set to $3.45/gal (2026 baseline). Updated weekly by EIA.</div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">EV & ICE Vehicle Specs</div>
+                  <div className="text-slate-500">fueleconomy.gov Side-by-Side Comparison (U.S. DOE / EPA, model year 2025). EPA range, MPGe, and MSRP for Tesla Model 3 LR RWD and Model Y LR RWD; Toyota Corolla and RAV4 as ICE benchmarks. MSRP data from Edmunds.</div>
+                </div>
               </div>
 
               <p className="text-slate-500 italic text-xs pt-4 border-t border-slate-200">

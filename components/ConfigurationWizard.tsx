@@ -222,7 +222,7 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
               <button onClick={() => setShowAboutModal(false)} className="text-slate-400 hover:text-slate-600 text-2xl font-bold">×</button>
             </div>
 
-            <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
+            <div className="space-y-5 text-sm text-slate-700 leading-relaxed">
               <p className="font-semibold text-slate-900">
                 InsightPlug helps you understand the real costs and benefits of electric vehicle ownership based on your personal routine.
               </p>
@@ -235,31 +235,60 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
                 </p>
               </div>
 
-              <h3 className="font-bold text-slate-900 mt-6">What We Measure:</h3>
+              {/* Formulas */}
+              <h3 className="font-bold text-slate-900">🧮 How We Calculate</h3>
 
               <div className="space-y-3">
                 <div className="border-l-4 border-emerald-500 pl-4">
-                  <h4 className="font-semibold text-slate-900">💰 Estimated Monthly Fuel Savings</h4>
-                  <p className="text-xs">Immediate savings you'll see each month (combats temporal discounting bias where people undervalue future savings)</p>
+                  <h4 className="font-semibold text-slate-900 mb-1">💰 Monthly Fuel Savings</h4>
+                  <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
+                    <div>Gas cost = (miles/month ÷ MPG) × gas price</div>
+                    <div>EV cost = (miles/month ÷ mi/kWh) × blended rate</div>
+                    <div className="mt-1 font-bold">Savings = Gas cost − EV cost</div>
+                  </div>
+                  <p className="text-xs text-slate-500">Blended rate = home % × residential rate + public % × residential rate × 2.5. Public charging averages ~2.5× home rates.</p>
                 </div>
 
                 <div className="border-l-4 border-blue-500 pl-4">
-                  <h4 className="font-semibold text-slate-900">🔋 Daily Battery Usage</h4>
-                  <p className="text-xs">Shows how much of your battery capacity you actually use daily, helping you understand if you have enough range buffer</p>
+                  <h4 className="font-semibold text-slate-900 mb-1">🔋 Daily Battery Usage (DAU)</h4>
+                  <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
+                    DAU = (daily miles ÷ EPA range) × 100%
+                  </div>
+                  <p className="text-xs text-slate-500">Low DAU means the vehicle is over-provisioned — you're paying for more range than your routine needs.</p>
                 </div>
 
                 <div className="border-l-4 border-purple-500 pl-4">
-                  <h4 className="font-semibold text-slate-900">⏱️ Charging Frequency</h4>
-                  <p className="text-xs">How often you need to charge vs how often you'd need to visit a gas station, quantifying time savings</p>
+                  <h4 className="font-semibold text-slate-900 mb-1">⏱️ Charging Interval</h4>
+                  <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
+                    Interval = floor(EPA range ÷ daily miles) days
+                  </div>
+                  <p className="text-xs text-slate-500">Estimated days between home charges at your driving pace.</p>
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-                <h3 className="font-bold text-blue-900 mb-2">📊 Data Sources</h3>
-                <p className="text-blue-800 text-xs">
-                  We use 2026 forecasts from the U.S. Energy Information Administration (EIA) for electricity and gas prices,
-                  EPA estimates for vehicle efficiency, and National Household Travel Survey data for regional driving patterns.
-                </p>
+              {/* Data Sources */}
+              <h3 className="font-bold text-slate-900">📊 Data Sources</h3>
+
+              <div className="space-y-2 text-xs">
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">Daily Miles per Capita</div>
+                  <div className="text-slate-500">Federal Highway Administration (FHWA) — county-level average daily miles traveled per person. Used as your region's baseline driving figure.</div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">Residential Electricity Rates</div>
+                  <div className="text-slate-500">EIA <em>Electric Power Monthly</em>, Table 5.6.A — Average Price by State, December 2025 (preliminary). Updated monthly. NY: 22.24 ¢/kWh · CA: 29.51 ¢/kWh · TX: 14.46 ¢/kWh.</div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">Gasoline Price</div>
+                  <div className="text-slate-500">EIA Weekly Retail Gasoline Prices — U.S. regular conventional average. Default set to $3.45/gal (2026 baseline). Updated weekly by EIA.</div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">EV & ICE Vehicle Specs</div>
+                  <div className="text-slate-500">fueleconomy.gov Side-by-Side Comparison (U.S. DOE / EPA, model year 2025). EPA range, MPGe, and MSRP for Tesla Model 3 LR RWD and Model Y LR RWD; Toyota Corolla and RAV4 as ICE benchmarks. MSRP data from Edmunds.</div>
+                </div>
               </div>
 
               <p className="text-slate-500 italic text-xs pt-4 border-t border-slate-200">
