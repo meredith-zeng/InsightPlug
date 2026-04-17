@@ -23,7 +23,7 @@ All calculations are in `components/SimulationLab.tsx` (`calculateMetrics` useMe
 legacyCost = (dailyMiles × 30.4 / iceMpg) × gasPrice
 ```
 
-- `dailyMiles` — county-level per-capita average (miles/day), from FHWA data
+- `dailyMiles` — county-level per-capita average (miles/day), from Replica ([2023 county travel report](https://www.replicahq.com/post/the-average-american-adult-travels-more-than-40-miles-per-day-in-2023-see-how-residents-in-your-county-rank))
 - `iceMpg` — EPA combined MPG of the ICE benchmark vehicle
 - `gasPrice` — U.S. regular conventional gasoline price ($/gal), default $3.45 (EIA 2026)
 
@@ -72,8 +72,8 @@ Estimated number of days between home charges at the user's driving pace.
 ### 1. Daily Vehicle Miles Traveled per Capita by County
 
 **File:** `data_sources/Daily Miles per Capita.csv`  
-**Publisher:** Federal Highway Administration (FHWA)  
-**Update frequency:** No fixed schedule; released periodically as part of national travel surveys. The version used here reflects a recent survey cycle (county-level estimates).
+**Publisher:** Replica ([replicahq.com](https://www.replicahq.com/post/the-average-american-adult-travels-more-than-40-miles-per-day-in-2023-see-how-residents-in-your-county-rank))  
+**Update frequency:** Annual county-level travel estimates. The version used here is from Replica's 2023 report on per-adult daily travel by U.S. county.
 
 **Schema (CSV, one row per county):**
 
@@ -175,7 +175,7 @@ MSRP and tank data provided by Edmunds.com, Inc. per fueleconomy.gov footnotes.
 
 ### Regions Covered
 
-Counties in **New York**, **California** (Bay Area, Southern CA, Sacramento, Northern CA), and **Texas** (Dallas, Houston). Each county uses its FHWA per-capita daily miles figure directly.
+Counties in **New York**, **California** (Bay Area, Southern CA, Sacramento, Northern CA), and **Texas** (Dallas, Houston). Each county uses its Replica per-capita daily miles figure directly.
 
 ---
 

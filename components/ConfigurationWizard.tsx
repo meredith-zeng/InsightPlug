@@ -272,7 +272,7 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
               <div className="space-y-2 text-xs">
                 <div className="border border-slate-200 rounded-lg p-3">
                   <div className="font-semibold text-slate-800 mb-0.5">Daily Miles per Capita</div>
-                  <div className="text-slate-500">Federal Highway Administration (FHWA) — county-level average daily miles traveled per person. Used as your region's baseline driving figure.</div>
+                  <div className="text-slate-500">Replica — county-level average daily miles traveled per adult (2023). Used as your region's baseline driving figure. <a href="https://www.replicahq.com/post/the-average-american-adult-travels-more-than-40-miles-per-day-in-2023-see-how-residents-in-your-county-rank" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">
