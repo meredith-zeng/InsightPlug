@@ -242,27 +242,28 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
                 <div className="border-l-4 border-emerald-500 pl-4">
                   <h4 className="font-semibold text-slate-900 mb-1">💰 Monthly Fuel Savings</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
+                    <div>miles/month = daily miles × 30.4</div>
                     <div>Gas cost = (miles/month ÷ MPG) × gas price</div>
                     <div>EV cost = (miles/month ÷ mi/kWh) × blended rate</div>
                     <div className="mt-1 font-bold">Savings = Gas cost − EV cost</div>
                   </div>
-                  <p className="text-xs text-slate-500">Blended rate = home % × residential rate + public % × residential rate × 2.5. Public charging averages ~2.5× home rates.</p>
+                  <p className="text-xs text-slate-500">Blended rate = home % × residential rate (EIA) + public % × public charging rate (AAA). Public charging averages ~$0.42/kWh nationally — about 2.4× residential.</p>
                 </div>
 
                 <div className="border-l-4 border-blue-500 pl-4">
                   <h4 className="font-semibold text-slate-900 mb-1">🔋 Daily Battery Usage (DAU)</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
-                    DAU = (daily miles ÷ EPA range) × 100%
+                    DAU = min(100%, (daily miles ÷ EPA range) × 100%)
                   </div>
-                  <p className="text-xs text-slate-500">Low DAU means the vehicle is over-provisioned — you're paying for more range than your routine needs.</p>
+                  <p className="text-xs text-slate-500">Capped at 100% — if your daily miles exceed EPA range, you need multiple charges per day. Low DAU means the vehicle is over-provisioned.</p>
                 </div>
 
                 <div className="border-l-4 border-purple-500 pl-4">
                   <h4 className="font-semibold text-slate-900 mb-1">⏱️ Charging Interval</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
-                    Interval = floor(EPA range ÷ daily miles) days
+                    Interval = max(1, floor(EPA range ÷ daily miles)) days
                   </div>
-                  <p className="text-xs text-slate-500">Estimated days between home charges at your driving pace.</p>
+                  <p className="text-xs text-slate-500">Estimated days between home charges at your driving pace. Minimum 1 day.</p>
                 </div>
               </div>
 
@@ -276,8 +277,13 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">
-                  <div className="font-semibold text-slate-800 mb-0.5">Residential Electricity Rates</div>
-                  <div className="text-slate-500">EIA <em>Electric Power Monthly</em>, Table 5.6.A — Average Price by State, December 2025 (preliminary). Updated monthly. NY: 22.24 ¢/kWh · CA: 29.51 ¢/kWh · TX: 14.46 ¢/kWh. <a href="https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
+                  <div className="font-semibold text-slate-800 mb-0.5">Residential Electricity Rates (home charging)</div>
+                  <div className="text-slate-500">EIA <em>Electric Power Monthly</em>, Table 5.6.A — Average Price by State, December 2025 (preliminary). Updated monthly. 11 states covered: NY, CA, TX, FL, WA, MA, IL, GA, AZ, CO, OR. <a href="https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">Public Charging Rates (away from home)</div>
+                  <div className="text-slate-500">AAA <em>EV Charging Prices</em> — per-state daily average across all commercial/public charging (L1/L2/L3). U.S. avg: 41.7 ¢/kWh. Per-state values stored for 11 states (NY, CA, TX, FL, WA, MA, IL, GA, AZ, CO, OR); other states fall back to the U.S. average. <a href="https://gasprices.aaa.com/ev-charging-prices/" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { UserProfile, ChatMessage } from '../types';
-import { ELECTRICITY_RATES, EV_MODELS, REGIONS } from '../services/dataCatalog';
+import { ELECTRICITY_RATES, EV_MODELS, REGIONS, PUBLIC_CHARGING_US_AVG } from '../services/dataCatalog';
 import { buildOpenAIReply } from '../services/openaiAdvisor';
 import { marked } from 'marked';
 import { Icons } from '../constants';
@@ -20,16 +20,17 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
   const scrollRef = useRef<HTMLDivElement>(null);
   const limiterRef = useRef(createLimiter('insightplug-chat', { maxPerMinute: 6, maxTotal: 20 }));
 
-  const PUBLIC_RATE_MULTIPLIER = 2.5;
   const calculateMetrics = useMemo(() => {
     const milesPerMonth = profile.dailyMiles * 30.4;
 
     // Monthly fuel costs
     const legacyCost = Math.round((milesPerMonth / profile.iceMpg) * profile.gasPrice);
 
-    // EV operating costs
-    const stateRate = ELECTRICITY_RATES.find(r => r.state === profile.region.state)?.pricePerKwh || 0.1789;
-    const blendedEvRate = (profile.homeChargingRatio * stateRate) + ((1 - profile.homeChargingRatio) * (stateRate * PUBLIC_RATE_MULTIPLIER));
+    // EV operating costs — residential rate (EIA) at home, AAA public rate away from home
+    const stateEntry = ELECTRICITY_RATES.find(r => r.state === profile.region.state);
+    const homeRate = stateEntry?.pricePerKwh || 0.1789;
+    const publicRate = stateEntry?.publicPricePerKwh || PUBLIC_CHARGING_US_AVG;
+    const blendedEvRate = (profile.homeChargingRatio * homeRate) + ((1 - profile.homeChargingRatio) * publicRate);
     const efficientCost = Math.round((milesPerMonth / profile.evEfficiency) * blendedEvRate);
 
     const monthlySurplus = legacyCost - efficientCost;
@@ -46,19 +47,42 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
   }, [profile]);
 
   useEffect(() => {
+    const { interval, monthlySurplus, dailyAssetUtilization } = calculateMetrics;
+    const absMonthly = Math.abs(monthlySurplus);
+    const years = profile.ownershipYears;
+    const totalDelta = absMonthly * 12 * years;
+
+    const intervalLabel = interval === 1 ? 'every day' : `once every **${interval} days**`;
+    const headroomNote =
+      interval >= 4
+        ? "That's plenty of headroom for unplanned trips or weekend drives."
+        : interval >= 2
+          ? 'Comfortable margin for most days; longer trips still need planning.'
+          : "That's near-daily charging — tight margin if you have a longer day.";
+
+    let savingsLine: string;
+    if (monthlySurplus > 0) {
+      savingsLine = `💰 **Monthly fuel delta:** you'd save about **$${absMonthly}/month** on fuel vs. a ${profile.iceMpg}-MPG gas car — roughly **$${totalDelta.toLocaleString()} over ${years} years** in operating costs alone.`;
+    } else if (monthlySurplus < 0) {
+      savingsLine = `💰 **Monthly fuel delta:** at today's prices, the EV would cost about **$${absMonthly}/month more** to fuel than a ${profile.iceMpg}-MPG gas car — roughly **$${totalDelta.toLocaleString()} extra over ${years} years**. Usually this flips once you raise home-charging share or if gas prices rise.`;
+    } else {
+      savingsLine = `💰 **Monthly fuel delta:** about break-even vs. a ${profile.iceMpg}-MPG gas car at today's prices.`;
+    }
+
     const welcome = `
-**EV ECO EXPERT ONLINE**
+Hi! I'm your EV economics assistant. I've already run the headline numbers for your setup — here's what they say.
 
-I've analyzed your mobility constraints:
+Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.name}, ${profile.region.state}**, with an EV rated for **${profile.ev.epaRange} mi** of range:
 
-*   **Time Gain**: Refuel every **${calculateMetrics.interval} days**.
-*   **Cash Flow**: Recapture **${formatSignedCurrency(calculateMetrics.monthlySurplus)}** monthly.
-*   **Asset Use**: **${calculateMetrics.dailyAssetUtilization.toFixed(1)}%** daily utilization.
+- 🔋 **Charging cadence:** roughly ${intervalLabel} at home, using **~${dailyAssetUtilization.toFixed(1)}%** of the battery per day. ${headroomNote}
+- ${savingsLine}
 
-How can I help you optimize further?
+---
+
+**This is a conversation — keep going.** Adjust any input on the left (daily miles, home-charging share, gas price, ownership years…) and I'll re-run the model. Tap a suggestion below, or type your own question — no question is too basic. 👇
     `;
     setMessages([{ role: 'model', content: welcome }]);
-  }, [profile.region.fips, profile.ev.model, profile.dailyMiles, calculateMetrics]);
+  }, [profile.region.fips, profile.region.name, profile.region.state, profile.ev.epaRange, profile.dailyMiles, profile.iceMpg, profile.ownershipYears, calculateMetrics]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -545,11 +569,14 @@ How can I help you optimize further?
                   {isTyping && <div className="text-[10px] font-black text-emerald-500/60 uppercase animate-pulse">Expert thinking...</div>}
                 </div>
 
-                <div className="px-4 py-2 flex flex-wrap gap-1 shrink-0 border-t border-white/5">
-                  {['Savings?', 'Range?', 'Charging?'].map(p => (
+                <div className="px-4 py-2 flex flex-wrap gap-1.5 shrink-0 border-t border-white/5">
+                  {[
+                    'What if I can only charge at home 30% of the time?',
+                    'When does the EV pay back its higher price?',
+                  ].map(p => (
                     <button
                       key={p} onClick={() => sendMessage(p)}
-                      className="px-2 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5 rounded-lg text-[9px] font-bold transition-all"
+                      className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 rounded-lg text-[10px] leading-snug transition-all text-left"
                     >
                       {p}
                     </button>
@@ -604,27 +631,28 @@ How can I help you optimize further?
                 <div className="border-l-4 border-emerald-500 pl-4">
                   <h4 className="font-semibold text-slate-900 mb-1">💰 Monthly Fuel Savings</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
+                    <div>miles/month = daily miles × 30.4</div>
                     <div>Gas cost = (miles/month ÷ MPG) × gas price</div>
                     <div>EV cost = (miles/month ÷ mi/kWh) × blended rate</div>
                     <div className="mt-1 font-bold">Savings = Gas cost − EV cost</div>
                   </div>
-                  <p className="text-xs text-slate-500">Blended rate = home % × residential rate + public % × residential rate × 2.5. Public charging averages ~2.5× home rates.</p>
+                  <p className="text-xs text-slate-500">Blended rate = home % × residential rate (EIA) + public % × public charging rate (AAA). Public charging averages ~$0.42/kWh nationally — about 2.4× residential.</p>
                 </div>
 
                 <div className="border-l-4 border-blue-500 pl-4">
                   <h4 className="font-semibold text-slate-900 mb-1">🔋 Daily Battery Usage (DAU)</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
-                    DAU = (daily miles ÷ EPA range) × 100%
+                    DAU = min(100%, (daily miles ÷ EPA range) × 100%)
                   </div>
-                  <p className="text-xs text-slate-500">Low DAU means the vehicle is over-provisioned — you're paying for more range than your routine needs.</p>
+                  <p className="text-xs text-slate-500">Capped at 100% — if your daily miles exceed EPA range, you need multiple charges per day. Low DAU means the vehicle is over-provisioned.</p>
                 </div>
 
                 <div className="border-l-4 border-purple-500 pl-4">
                   <h4 className="font-semibold text-slate-900 mb-1">⏱️ Charging Interval</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
-                    Interval = floor(EPA range ÷ daily miles) days
+                    Interval = max(1, floor(EPA range ÷ daily miles)) days
                   </div>
-                  <p className="text-xs text-slate-500">Estimated days between home charges at your driving pace.</p>
+                  <p className="text-xs text-slate-500">Estimated days between home charges at your driving pace. Minimum 1 day.</p>
                 </div>
               </div>
 
@@ -638,8 +666,13 @@ How can I help you optimize further?
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">
-                  <div className="font-semibold text-slate-800 mb-0.5">Residential Electricity Rates</div>
-                  <div className="text-slate-500">EIA <em>Electric Power Monthly</em>, Table 5.6.A — Average Price by State, December 2025 (preliminary). Updated monthly. NY: 22.24 ¢/kWh · CA: 29.51 ¢/kWh · TX: 14.46 ¢/kWh. <a href="https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
+                  <div className="font-semibold text-slate-800 mb-0.5">Residential Electricity Rates (home charging)</div>
+                  <div className="text-slate-500">EIA <em>Electric Power Monthly</em>, Table 5.6.A — Average Price by State, December 2025 (preliminary). Updated monthly. 11 states covered: NY, CA, TX, FL, WA, MA, IL, GA, AZ, CO, OR. <a href="https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">Public Charging Rates (away from home)</div>
+                  <div className="text-slate-500">AAA <em>EV Charging Prices</em> — per-state daily average across all commercial/public charging (L1/L2/L3). U.S. avg: 41.7 ¢/kWh. Per-state values stored for 11 states (NY, CA, TX, FL, WA, MA, IL, GA, AZ, CO, OR); other states fall back to the U.S. average. <a href="https://gasprices.aaa.com/ev-charging-prices/" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">

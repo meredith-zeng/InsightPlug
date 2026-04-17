@@ -1,4 +1,5 @@
 import { UserProfile, AISummary, CostDataPoint } from '../types';
+import { ELECTRICITY_RATES, PUBLIC_CHARGING_US_AVG } from './dataCatalog';
 
 type ExpertMetrics = {
   interval?: number;
@@ -12,7 +13,11 @@ const toCurrency = (value: number) => `$${Math.round(value).toLocaleString()}`;
 
 const estimateMonthlySavings = (profile: UserProfile) => {
   const monthlyGas = (profile.annualMileage / profile.iceMpg) * profile.gasPrice / 12;
-  const monthlyElectric = (profile.annualMileage / profile.evEfficiency) * profile.electricRate / 12;
+  const stateEntry = ELECTRICITY_RATES.find(r => r.state === profile.region.state);
+  const homeRate = stateEntry?.pricePerKwh ?? profile.electricRate;
+  const publicRate = stateEntry?.publicPricePerKwh ?? PUBLIC_CHARGING_US_AVG;
+  const blendedRate = profile.homeChargingRatio * homeRate + (1 - profile.homeChargingRatio) * publicRate;
+  const monthlyElectric = (profile.annualMileage / profile.evEfficiency) * blendedRate / 12;
   return monthlyGas - monthlyElectric;
 };
 
