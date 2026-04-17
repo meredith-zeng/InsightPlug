@@ -25,7 +25,7 @@ legacyCost = (dailyMiles × 30.4 / iceMpg) × gasPrice
 
 - `dailyMiles` — county-level per-capita average (miles/day), from Replica ([2023 county travel report](https://www.replicahq.com/post/the-average-american-adult-travels-more-than-40-miles-per-day-in-2023-see-how-residents-in-your-county-rank))
 - `iceMpg` — EPA combined MPG of the ICE benchmark vehicle
-- `gasPrice` — U.S. regular conventional gasoline price ($/gal), default $3.45 (EIA 2026)
+- `gasPrice` — U.S. all grades all formulations retail gasoline price ($/gal), default $4.25 (EIA weekly, 2026-04-13)
 
 ### 2. Monthly EV Operating Cost (Efficient TCO)
 
@@ -99,7 +99,7 @@ We use `Total Miles per Cap` (not `Vehicle per Cap Miles`) as `dailyMiles` in th
 ### 2. State Residential Electricity Rates
 
 **File:** `data_sources/Electric Power Monthly - U.S. Energy Information Administration (EIA).pdf`  
-**Table:** 5.6.A — *Average Price of Electricity to Ultimate Customers by End-Use Sector, by State*  
+**Table:** 5.6.A — *Average Price of Electricity to Ultimate Customers by End-Use Sector, by State* ([live table](https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a))  
 **Publisher:** U.S. Energy Information Administration (EIA), Form EIA-861M (Monthly Electric Power Industry Report)  
 **Update frequency:** Monthly. The PDF snapshot used here covers **December 2025** (preliminary) and December 2024 (final).
 
@@ -127,18 +127,18 @@ Each row is a state or Census division. We extract the **Residential, December 2
 
 ### 3. U.S. Retail Gasoline Price
 
-**File:** `data_sources/Regular_Conventional_price.xls`  
-**Publisher:** U.S. Energy Information Administration (EIA) — Weekly Retail Gasoline and Diesel Prices  
-**Update frequency:** Weekly (every Monday for the prior week). The XLS contains the full historical weekly series.
+**File:** `data_sources/PET_PRI_GND_A_EPM0_PTE_DPGAL_W.xls`  
+**Publisher:** U.S. Energy Information Administration (EIA) — [Weekly U.S. All Grades All Formulations Retail Gasoline Prices](https://www.eia.gov/dnav/pet/pet_pri_gnd_a_epm0_pte_dpgal_w.htm)  
+**Update frequency:** Weekly (every Monday for the prior week). The XLS contains the full historical weekly series (1993–present), plus regional (PADD), state, and city breakdowns.
 
-**What it contains:** Weekly U.S. average retail price for regular conventional gasoline ($/gallon), broken down by region (U.S. total, PADD regions). We use the **U.S. national average**, set to **$3.45/gal** as the 2026 baseline default in `App.tsx`.
+**What it contains:** Weekly U.S. average retail price for all grades, all formulations motor gasoline ($/gallon), with national, PADD-region, state, and select-city series. We use the **U.S. national average** (`Data 1` sheet, series `EMM_EPM0_PTE_NUS_DPG`), set to **$4.25/gal** in `App.tsx` — the most recent weekly value (week of 2026-04-13).
 
 ---
 
 ### 4. EV & ICE Vehicle Specs
 
 **File:** `data_sources/Car-Models-compare-Side-by-Side.pdf`  
-**Source:** [fueleconomy.gov](https://www.fueleconomy.gov) — Side-by-Side Vehicle Comparison tool  
+**Source:** [fueleconomy.gov Side-by-Side Vehicle Comparison tool](https://www.fueleconomy.gov/feg/Find.do?action=sbsSelect)  
 **Publisher:** U.S. Department of Energy / U.S. Environmental Protection Agency (EPA), administered by Oak Ridge National Laboratory  
 **Update frequency:** Annually, when EPA releases model-year ratings. The snapshot used covers **model year 2025**.
 

@@ -14,7 +14,7 @@ const App: React.FC = () => {
     ev: defaultEV,
     homeChargingRatio: 0.75,
     ownershipYears: 10,
-    gasPrice: 3.45, // Updated to 2026 average
+    gasPrice: 4.25, // EIA weekly U.S. all grades all formulations, week of 2026-04-13
     iceMpg: defaultEV.iceBenchmark?.mpg || 28,
     icePrice: defaultEV.iceBenchmark?.price || 32000,
     evPrice: defaultEV.msrp,
