@@ -79,17 +79,7 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
 
 ---
 
-**This is a conversation — keep going.** Adjust any input on the left (daily miles, home-charging share, gas price, ownership years…) and I'll re-run the model. Or type a question in the box below and I'll walk you through the logic behind any number.
-
-A few things people usually ask:
-
-- *"What happens if I can only charge at home 30% of the time?"*
-- *"How sensitive is this to gas prices?"*
-- *"When does the EV pay back its higher sticker price?"*
-- *"Does the break-even still work if I only keep the car ${Math.max(3, years - 5)} years?"*
-- *"Why is public charging so much more expensive than home?"*
-
-Ask away — no question is too basic. 👇
+**This is a conversation — keep going.** Adjust any input on the left (daily miles, home-charging share, gas price, ownership years…) and I'll re-run the model. Tap a suggestion below, or type your own question — no question is too basic. 👇
     `;
     setMessages([{ role: 'model', content: welcome }]);
   }, [profile.region.fips, profile.region.name, profile.region.state, profile.ev.epaRange, profile.dailyMiles, profile.iceMpg, profile.ownershipYears, calculateMetrics]);
@@ -579,11 +569,14 @@ Ask away — no question is too basic. 👇
                   {isTyping && <div className="text-[10px] font-black text-emerald-500/60 uppercase animate-pulse">Expert thinking...</div>}
                 </div>
 
-                <div className="px-4 py-2 flex flex-wrap gap-1 shrink-0 border-t border-white/5">
-                  {['Savings?', 'Range?', 'Charging?'].map(p => (
+                <div className="px-4 py-2 flex flex-wrap gap-1.5 shrink-0 border-t border-white/5">
+                  {[
+                    'What if I can only charge at home 30% of the time?',
+                    'When does the EV pay back its higher price?',
+                  ].map(p => (
                     <button
                       key={p} onClick={() => sendMessage(p)}
-                      className="px-2 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/5 rounded-lg text-[9px] font-bold transition-all"
+                      className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 rounded-lg text-[10px] leading-snug transition-all text-left"
                     >
                       {p}
                     </button>
