@@ -242,27 +242,28 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
                 <div className="border-l-4 border-emerald-500 pl-4">
                   <h4 className="font-semibold text-slate-900 mb-1">💰 Monthly Fuel Savings</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
+                    <div>miles/month = daily miles × 30.4</div>
                     <div>Gas cost = (miles/month ÷ MPG) × gas price</div>
                     <div>EV cost = (miles/month ÷ mi/kWh) × blended rate</div>
                     <div className="mt-1 font-bold">Savings = Gas cost − EV cost</div>
                   </div>
-                  <p className="text-xs text-slate-500">Blended rate = home % × residential rate (EIA) + public % × public charging rate (AAA). Public charging averages ~$0.40/kWh nationally — about 2× residential.</p>
+                  <p className="text-xs text-slate-500">Blended rate = home % × residential rate (EIA) + public % × public charging rate (AAA). Public charging averages ~$0.42/kWh nationally — about 2.4× residential.</p>
                 </div>
 
                 <div className="border-l-4 border-blue-500 pl-4">
                   <h4 className="font-semibold text-slate-900 mb-1">🔋 Daily Battery Usage (DAU)</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
-                    DAU = (daily miles ÷ EPA range) × 100%
+                    DAU = min(100%, (daily miles ÷ EPA range) × 100%)
                   </div>
-                  <p className="text-xs text-slate-500">Low DAU means the vehicle is over-provisioned — you're paying for more range than your routine needs.</p>
+                  <p className="text-xs text-slate-500">Capped at 100% — if your daily miles exceed EPA range, you need multiple charges per day. Low DAU means the vehicle is over-provisioned.</p>
                 </div>
 
                 <div className="border-l-4 border-purple-500 pl-4">
                   <h4 className="font-semibold text-slate-900 mb-1">⏱️ Charging Interval</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
-                    Interval = floor(EPA range ÷ daily miles) days
+                    Interval = max(1, floor(EPA range ÷ daily miles)) days
                   </div>
-                  <p className="text-xs text-slate-500">Estimated days between home charges at your driving pace.</p>
+                  <p className="text-xs text-slate-500">Estimated days between home charges at your driving pace. Minimum 1 day.</p>
                 </div>
               </div>
 
