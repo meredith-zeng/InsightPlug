@@ -277,17 +277,17 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
 
                 <div className="border border-slate-200 rounded-lg p-3">
                   <div className="font-semibold text-slate-800 mb-0.5">Residential Electricity Rates</div>
-                  <div className="text-slate-500">EIA <em>Electric Power Monthly</em>, Table 5.6.A — Average Price by State, December 2025 (preliminary). Updated monthly. NY: 22.24 ¢/kWh · CA: 29.51 ¢/kWh · TX: 14.46 ¢/kWh.</div>
+                  <div className="text-slate-500">EIA <em>Electric Power Monthly</em>, Table 5.6.A — Average Price by State, December 2025 (preliminary). Updated monthly. NY: 22.24 ¢/kWh · CA: 29.51 ¢/kWh · TX: 14.46 ¢/kWh. <a href="https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">
                   <div className="font-semibold text-slate-800 mb-0.5">Gasoline Price</div>
-                  <div className="text-slate-500">EIA Weekly Retail Gasoline Prices — U.S. regular conventional average. Default set to $3.45/gal (2026 baseline). Updated weekly by EIA.</div>
+                  <div className="text-slate-500">EIA Weekly U.S. All Grades All Formulations Retail Gasoline Prices — national average. Default set to $4.25/gal (week of 2026-04-13). Updated weekly by EIA. <a href="https://www.eia.gov/dnav/pet/pet_pri_gnd_a_epm0_pte_dpgal_w.htm" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">
                   <div className="font-semibold text-slate-800 mb-0.5">EV & ICE Vehicle Specs</div>
-                  <div className="text-slate-500">fueleconomy.gov Side-by-Side Comparison (U.S. DOE / EPA, model year 2025). EPA range, MPGe, and MSRP for Tesla Model 3 LR RWD and Model Y LR RWD; Toyota Corolla and RAV4 as ICE benchmarks. MSRP data from Edmunds.</div>
+                  <div className="text-slate-500">fueleconomy.gov Side-by-Side Comparison (U.S. DOE / EPA, model year 2025). EPA range, MPGe, and MSRP for Tesla Model 3 LR RWD and Model Y LR RWD; Toyota Corolla and RAV4 as ICE benchmarks. MSRP data from Edmunds. <a href="https://www.fueleconomy.gov/feg/Find.do?action=sbsSelect" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
                 </div>
               </div>
 
