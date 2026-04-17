@@ -47,19 +47,52 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
   }, [profile]);
 
   useEffect(() => {
+    const { interval, monthlySurplus, dailyAssetUtilization } = calculateMetrics;
+    const absMonthly = Math.abs(monthlySurplus);
+    const years = profile.ownershipYears;
+    const totalDelta = absMonthly * 12 * years;
+
+    const intervalLabel = interval === 1 ? 'every day' : `once every **${interval} days**`;
+    const headroomNote =
+      interval >= 4
+        ? "That's plenty of headroom for unplanned trips or weekend drives."
+        : interval >= 2
+          ? 'Comfortable margin for most days; longer trips still need planning.'
+          : "That's near-daily charging — tight margin if you have a longer day.";
+
+    let savingsLine: string;
+    if (monthlySurplus > 0) {
+      savingsLine = `💰 **Monthly fuel delta:** you'd save about **$${absMonthly}/month** on fuel vs. a ${profile.iceMpg}-MPG gas car — roughly **$${totalDelta.toLocaleString()} over ${years} years** in operating costs alone.`;
+    } else if (monthlySurplus < 0) {
+      savingsLine = `💰 **Monthly fuel delta:** at today's prices, the EV would cost about **$${absMonthly}/month more** to fuel than a ${profile.iceMpg}-MPG gas car — roughly **$${totalDelta.toLocaleString()} extra over ${years} years**. Usually this flips once you raise home-charging share or if gas prices rise.`;
+    } else {
+      savingsLine = `💰 **Monthly fuel delta:** about break-even vs. a ${profile.iceMpg}-MPG gas car at today's prices.`;
+    }
+
     const welcome = `
-**EV ECO EXPERT ONLINE**
+Hi! I'm your EV economics assistant. I've already run the headline numbers for your setup — here's what they say.
 
-I've analyzed your mobility constraints:
+Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.name}, ${profile.region.state}**, with an EV rated for **${profile.ev.epaRange} mi** of range:
 
-*   **Time Gain**: Refuel every **${calculateMetrics.interval} days**.
-*   **Cash Flow**: Recapture **${formatSignedCurrency(calculateMetrics.monthlySurplus)}** monthly.
-*   **Asset Use**: **${calculateMetrics.dailyAssetUtilization.toFixed(1)}%** daily utilization.
+- 🔋 **Charging cadence:** roughly ${intervalLabel} at home, using **~${dailyAssetUtilization.toFixed(1)}%** of the battery per day. ${headroomNote}
+- ${savingsLine}
 
-How can I help you optimize further?
+---
+
+**This is a conversation — keep going.** Adjust any input on the left (daily miles, home-charging share, gas price, ownership years…) and I'll re-run the model. Or type a question in the box below and I'll walk you through the logic behind any number.
+
+A few things people usually ask:
+
+- *"What happens if I can only charge at home 30% of the time?"*
+- *"How sensitive is this to gas prices?"*
+- *"When does the EV pay back its higher sticker price?"*
+- *"Does the break-even still work if I only keep the car ${Math.max(3, years - 5)} years?"*
+- *"Why is public charging so much more expensive than home?"*
+
+Ask away — no question is too basic. 👇
     `;
     setMessages([{ role: 'model', content: welcome }]);
-  }, [profile.region.fips, profile.ev.model, profile.dailyMiles, calculateMetrics]);
+  }, [profile.region.fips, profile.region.name, profile.region.state, profile.ev.epaRange, profile.dailyMiles, profile.iceMpg, profile.ownershipYears, calculateMetrics]);
 
   useEffect(() => {
     if (scrollRef.current) {
