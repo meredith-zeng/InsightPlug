@@ -645,7 +645,7 @@ How can I help you optimize further?
 
                 <div className="border border-slate-200 rounded-lg p-3">
                   <div className="font-semibold text-slate-800 mb-0.5">Public Charging Rates (away from home)</div>
-                  <div className="text-slate-500">AAA <em>EV Charging Prices</em> — per-state daily average across all commercial/public charging (L1/L2/L3). U.S. avg: 41.7 ¢/kWh. Per-state values stored for 11 states (NY, CA, TX, FL, WA, MA, IL, GA, AZ, CO, OR); other states fall back to the U.S. average. <a href="https://gasprices.aaa.com/state-electric-averages/" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
+                  <div className="text-slate-500">AAA <em>EV Charging Prices</em> — per-state daily average across all commercial/public charging (L1/L2/L3). U.S. avg: 41.7 ¢/kWh. Per-state values stored for 11 states (NY, CA, TX, FL, WA, MA, IL, GA, AZ, CO, OR); other states fall back to the U.S. average. <a href="https://gasprices.aaa.com/ev-charging-prices/" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">

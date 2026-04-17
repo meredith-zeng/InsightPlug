@@ -136,7 +136,7 @@ Each row is a state or Census division. We extract the **Residential, December 2
 ### 3. Public / Commercial EV Charging Prices
 
 **File:** `data_sources/AAA EV Charging Prices.pdf`  
-**Publisher:** AAA — [EV Charging Prices](https://gasprices.aaa.com/state-electric-averages/)  
+**Publisher:** AAA — [EV Charging Prices](https://gasprices.aaa.com/ev-charging-prices/)  
 **Update frequency:** Daily national and per-state averages across all commercial/public charging (Level 1, Level 2, and Level 3/DC Fast Charging). Snapshot used: April 2026.
 
 **What it contains:** Per-state average retail price paid at public chargers, with charger counts per state. National average: **$0.417/kWh**. Values stored in `ELECTRICITY_RATES.publicPricePerKwh`:
