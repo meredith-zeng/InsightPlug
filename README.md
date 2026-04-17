@@ -30,15 +30,15 @@ legacyCost = (dailyMiles × 30.4 / iceMpg) × gasPrice
 ### 2. Monthly EV Operating Cost (Efficient TCO)
 
 ```
-blendedRate = homeChargingRatio × stateRate
-            + (1 - homeChargingRatio) × stateRate × 2.5
+blendedRate = homeChargingRatio × homeRate
+            + (1 - homeChargingRatio) × publicRate
 
 efficientCost = (dailyMiles × 30.4 / evEfficiency) × blendedRate
 ```
 
-- `stateRate` — state-level residential electricity rate ($/kWh), from EIA Electric Power Monthly
+- `homeRate` — state-level residential electricity rate ($/kWh), from EIA Electric Power Monthly
+- `publicRate` — state-level public/commercial EV charging rate ($/kWh), from AAA EV Charging Prices (L1/L2/L3 blended). Fallback is AAA U.S. average $0.417/kWh.
 - `homeChargingRatio` — user-configured fraction of charging done at home (0–1)
-- `2.5` — public charger price multiplier (public rates average ~2.5× residential)
 - `evEfficiency` — EV efficiency in miles/kWh, default 3.8 mi/kWh for modern EVs
 
 ### 3. Monthly Surplus
@@ -113,19 +113,53 @@ We use `Total Miles per Cap` (not `Vehicle per Cap Miles`) as `dailyMiles` in th
 | Transportation | Rate paid for EV charging infrastructure |
 | All Sectors | Blended average |
 
-Each row is a state or Census division. We extract the **Residential, December 2025** column for the three states covered:
+Each row is a state or Census division. We extract the **Residential, December 2025** column for every covered state:
 
-| State | Residential rate used | Source value |
-|-------|-----------------------|--------------|
-| NY | $0.2224/kWh | 22.24 ¢/kWh (Middle Atlantic → New York row) |
-| CA | $0.2951/kWh | 34.71 ¢/kWh Pacific Contiguous → California (preliminary Dec 2025) |
-| TX | $0.1446/kWh | 15.87 ¢/kWh West South Central → Texas |
+| State | Residential rate used | EIA Dec 2025 (¢/kWh) |
+|-------|-----------------------|----------------------|
+| NY | $0.2224/kWh | 27.39 |
+| CA | $0.2951/kWh | 34.71 |
+| TX | $0.1446/kWh | 15.87 |
+| FL | $0.1502/kWh | 15.02 |
+| WA | $0.1333/kWh | 13.33 |
+| MA | $0.3088/kWh | 30.88 |
+| IL | $0.1707/kWh | 17.07 |
+| GA | $0.1367/kWh | 13.67 |
+| AZ | $0.1546/kWh | 15.46 |
+| CO | $0.1612/kWh | 16.12 |
+| OR | $0.1494/kWh | 14.94 |
 
-> Note: CA rate in `dataCatalog.ts` ($0.2951) reflects a slightly earlier snapshot; the Dec 2025 preliminary figure is 34.71 ¢/kWh and may be updated in a future release.
+> Note: NY, CA, and TX values in `dataCatalog.ts` reflect an earlier EIA snapshot that slightly lags the Dec 2025 preliminary figure (e.g. CA's Dec 2025 prelim is 34.71 ¢/kWh vs. the $0.2951 stored value). Newer states use the Dec 2025 preliminary value directly.
 
 ---
 
-### 3. U.S. Retail Gasoline Price
+### 3. Public / Commercial EV Charging Prices
+
+**File:** `data_sources/AAA EV Charging Prices.pdf`  
+**Publisher:** AAA — [EV Charging Prices](https://gasprices.aaa.com/state-electric-averages/)  
+**Update frequency:** Daily national and per-state averages across all commercial/public charging (Level 1, Level 2, and Level 3/DC Fast Charging). Snapshot used: April 2026.
+
+**What it contains:** Per-state average retail price paid at public chargers, with charger counts per state. National average: **$0.417/kWh**. Values stored in `ELECTRICITY_RATES.publicPricePerKwh`:
+
+| State | Public charging rate | Chargers sampled |
+|-------|----------------------|------------------|
+| NY | $0.399/kWh | 20,630 |
+| CA | $0.465/kWh | 28,279 |
+| TX | $0.415/kWh |  5,393 |
+| FL | $0.411/kWh |  7,762 |
+| WA | $0.396/kWh |  3,908 |
+| MA | $0.395/kWh |  6,392 |
+| IL | $0.433/kWh |  2,654 |
+| GA | $0.419/kWh |  2,919 |
+| AZ | $0.437/kWh |  1,867 |
+| CO | $0.376/kWh |  3,214 |
+| OR | $0.406/kWh |  1,923 |
+
+Used in the `blendedRate` formula for the `(1 − homeChargingRatio)` portion of charging done away from home. For states not in the table, the U.S. average ($0.417/kWh) is used as a fallback via `PUBLIC_CHARGING_US_AVG`.
+
+---
+
+### 4. U.S. Retail Gasoline Price
 
 **File:** `data_sources/PET_PRI_GND_A_EPM0_PTE_DPGAL_W.xls`  
 **Publisher:** U.S. Energy Information Administration (EIA) — [Weekly U.S. All Grades All Formulations Retail Gasoline Prices](https://www.eia.gov/dnav/pet/pet_pri_gnd_a_epm0_pte_dpgal_w.htm)  
@@ -135,7 +169,7 @@ Each row is a state or Census division. We extract the **Residential, December 2
 
 ---
 
-### 4. EV & ICE Vehicle Specs
+### 5. EV & ICE Vehicle Specs
 
 **File:** `data_sources/Car-Models-compare-Side-by-Side.pdf`  
 **Source:** [fueleconomy.gov Side-by-Side Vehicle Comparison tool](https://www.fueleconomy.gov/feg/Find.do?action=sbsSelect)  
@@ -175,7 +209,21 @@ MSRP and tank data provided by Edmunds.com, Inc. per fueleconomy.gov footnotes.
 
 ### Regions Covered
 
-Counties in **New York**, **California** (Bay Area, Southern CA, Sacramento, Northern CA), and **Texas** (Dallas, Houston). Each county uses its Replica per-capita daily miles figure directly.
+Counties in:
+
+- **New York** — Brooklyn, Manhattan
+- **California** — Bay Area, Southern CA, Sacramento, Northern CA (13 counties)
+- **Texas** — Dallas, Houston
+- **Florida** — Miami-Dade, Broward, Orange (Orlando), Hillsborough (Tampa)
+- **Washington** — King (Seattle), Pierce (Tacoma), Snohomish
+- **Massachusetts** — Suffolk (Boston), Middlesex, Norfolk, Worcester
+- **Illinois** — Cook (Chicago), DuPage, Lake
+- **Georgia** — Fulton (Atlanta), DeKalb, Cobb, Gwinnett
+- **Arizona** — Maricopa (Phoenix), Pima (Tucson)
+- **Colorado** — Denver, Arapahoe, Jefferson, El Paso (Colorado Springs)
+- **Oregon** — Multnomah (Portland), Washington, Clackamas
+
+Each county uses its Replica per-capita daily miles figure directly.
 
 ---
 

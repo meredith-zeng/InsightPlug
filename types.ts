@@ -22,7 +22,8 @@ export interface RegionData {
 
 export interface StateElectricity {
   state: string;
-  pricePerKwh: number; // in dollars
+  pricePerKwh: number; // residential rate, $/kWh (EIA)
+  publicPricePerKwh: number; // commercial/public charging avg, $/kWh (AAA)
 }
 
 export interface UserProfile {

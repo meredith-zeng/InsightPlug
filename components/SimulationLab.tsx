@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { UserProfile, ChatMessage } from '../types';
-import { ELECTRICITY_RATES, EV_MODELS, REGIONS } from '../services/dataCatalog';
+import { ELECTRICITY_RATES, EV_MODELS, REGIONS, PUBLIC_CHARGING_US_AVG } from '../services/dataCatalog';
 import { buildOpenAIReply } from '../services/openaiAdvisor';
 import { marked } from 'marked';
 import { Icons } from '../constants';
@@ -20,16 +20,17 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
   const scrollRef = useRef<HTMLDivElement>(null);
   const limiterRef = useRef(createLimiter('insightplug-chat', { maxPerMinute: 6, maxTotal: 20 }));
 
-  const PUBLIC_RATE_MULTIPLIER = 2.5;
   const calculateMetrics = useMemo(() => {
     const milesPerMonth = profile.dailyMiles * 30.4;
 
     // Monthly fuel costs
     const legacyCost = Math.round((milesPerMonth / profile.iceMpg) * profile.gasPrice);
 
-    // EV operating costs
-    const stateRate = ELECTRICITY_RATES.find(r => r.state === profile.region.state)?.pricePerKwh || 0.1789;
-    const blendedEvRate = (profile.homeChargingRatio * stateRate) + ((1 - profile.homeChargingRatio) * (stateRate * PUBLIC_RATE_MULTIPLIER));
+    // EV operating costs — residential rate (EIA) at home, AAA public rate away from home
+    const stateEntry = ELECTRICITY_RATES.find(r => r.state === profile.region.state);
+    const homeRate = stateEntry?.pricePerKwh || 0.1789;
+    const publicRate = stateEntry?.publicPricePerKwh || PUBLIC_CHARGING_US_AVG;
+    const blendedEvRate = (profile.homeChargingRatio * homeRate) + ((1 - profile.homeChargingRatio) * publicRate);
     const efficientCost = Math.round((milesPerMonth / profile.evEfficiency) * blendedEvRate);
 
     const monthlySurplus = legacyCost - efficientCost;
@@ -608,7 +609,7 @@ How can I help you optimize further?
                     <div>EV cost = (miles/month ÷ mi/kWh) × blended rate</div>
                     <div className="mt-1 font-bold">Savings = Gas cost − EV cost</div>
                   </div>
-                  <p className="text-xs text-slate-500">Blended rate = home % × residential rate + public % × residential rate × 2.5. Public charging averages ~2.5× home rates.</p>
+                  <p className="text-xs text-slate-500">Blended rate = home % × residential rate (EIA) + public % × public charging rate (AAA). Public charging averages ~$0.40/kWh nationally — about 2× residential.</p>
                 </div>
 
                 <div className="border-l-4 border-blue-500 pl-4">
@@ -638,8 +639,13 @@ How can I help you optimize further?
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">
-                  <div className="font-semibold text-slate-800 mb-0.5">Residential Electricity Rates</div>
-                  <div className="text-slate-500">EIA <em>Electric Power Monthly</em>, Table 5.6.A — Average Price by State, December 2025 (preliminary). Updated monthly. NY: 22.24 ¢/kWh · CA: 29.51 ¢/kWh · TX: 14.46 ¢/kWh. <a href="https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
+                  <div className="font-semibold text-slate-800 mb-0.5">Residential Electricity Rates (home charging)</div>
+                  <div className="text-slate-500">EIA <em>Electric Power Monthly</em>, Table 5.6.A — Average Price by State, December 2025 (preliminary). Updated monthly. 11 states covered: NY, CA, TX, FL, WA, MA, IL, GA, AZ, CO, OR. <a href="https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-3">
+                  <div className="font-semibold text-slate-800 mb-0.5">Public Charging Rates (away from home)</div>
+                  <div className="text-slate-500">AAA <em>EV Charging Prices</em> — per-state daily average across all commercial/public charging (L1/L2/L3). U.S. avg: 41.7 ¢/kWh. Per-state values stored for 11 states (NY, CA, TX, FL, WA, MA, IL, GA, AZ, CO, OR); other states fall back to the U.S. average. <a href="https://gasprices.aaa.com/state-electric-averages/" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Source</a>.</div>
                 </div>
 
                 <div className="border border-slate-200 rounded-lg p-3">
