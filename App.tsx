@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { UserProfile } from './types';
 import { EV_MODELS, REGIONS } from './services/dataCatalog';
 import { Icons } from './constants';
@@ -31,6 +32,7 @@ const App: React.FC = () => {
     return (
       <ErrorBoundary>
         <ConfigurationWizard profile={profile} setProfile={setProfile} onComplete={() => setShowAnalysis(true)} />
+        <Analytics />
       </ErrorBoundary>
     );
   }
@@ -62,6 +64,7 @@ const App: React.FC = () => {
           <SimulationLab profile={profile} setProfile={setProfile} />
         </ErrorBoundary>
       </main>
+      <Analytics />
     </div>
   );
 };
