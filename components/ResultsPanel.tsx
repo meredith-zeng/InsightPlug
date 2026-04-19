@@ -5,18 +5,18 @@ interface ResultsPanelProps {
   profile: UserProfile;
   legacyCost: number;
   efficientCost: number;
-  monthlySurplus: number;
-  dailyAssetUtilization: number;
-  interval: number;
+  monthlyFuelSavings: number;
+  dailyBatteryAdequacy: number;
+  chargingFrequency: number;
 }
 
 const ResultsPanel: React.FC<ResultsPanelProps> = ({
   profile,
   legacyCost,
   efficientCost,
-  monthlySurplus,
-  dailyAssetUtilization,
-  interval
+  monthlyFuelSavings,
+  dailyBatteryAdequacy,
+  chargingFrequency
 }) => {
   const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(profile.region.name + ', ' + profile.region.state)}&t=&z=${profile.dailyMiles <= 20 ? 12 : 11}&ie=UTF8&iwloc=&output=embed`;
 
@@ -25,9 +25,9 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
 
       {/* Top Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 h-fit shrink-0">
-        {/* Monthly Surplus - Left */}
+        {/* Monthly Fuel Savings - Left */}
         <div className="bg-white rounded-[28px] sm:rounded-[36px] p-8 sm:p-10 shadow-lg shadow-slate-200/20 border border-slate-100 min-h-[240px] flex flex-col justify-center">
-          <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Monthly Surplus</div>
+          <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Monthly Fuel Savings</div>
           <div className="text-[12px] font-bold text-slate-400 uppercase tracking-tight mb-8">Disposable Income Liquidity</div>
           <div className="space-y-3">
             <div className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Legacy TCO</div>
@@ -37,7 +37,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
 
         {/* Central Large Value */}
         <div className="bg-white rounded-[28px] sm:rounded-[36px] p-8 sm:p-10 shadow-lg shadow-slate-200/20 border border-slate-100 min-h-[240px] flex flex-col items-center justify-center">
-          <span className="text-5xl sm:text-6xl font-black text-emerald-600 tracking-tighter leading-none mb-3">+${monthlySurplus}</span>
+          <span className="text-5xl sm:text-6xl font-black text-emerald-600 tracking-tighter leading-none mb-3">+${monthlyFuelSavings}</span>
           <span className="text-[12px] font-black text-emerald-600 uppercase tracking-widest text-center">Immediate Liquidity / Mo</span>
         </div>
 
@@ -57,23 +57,23 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
         </div>
       </div>
 
-      {/* Middle Row - DAU and Map */}
+      {/* Middle Row - DBA and Map */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 flex-1 min-h-0">
-        {/* Daily Asset Utilization */}
+        {/* Daily Battery Adequacy */}
         <div className="bg-white rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-lg shadow-slate-200/20 border border-slate-100 flex flex-col">
-          <div className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-1">Daily Asset Utilization (DAU)</div>
+          <div className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-1">Daily Battery Adequacy (DBA)</div>
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-tight mb-6">Allocative Efficiency of Capital</div>
 
           <div className="flex-1 flex flex-col justify-center">
             <div className="flex items-baseline mb-6">
-              <span className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tighter leading-none">{dailyAssetUtilization.toFixed(1)}</span>
+              <span className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tighter leading-none">{dailyBatteryAdequacy.toFixed(1)}</span>
               <span className="text-2xl sm:text-3xl text-slate-200 ml-2 font-black">%</span>
             </div>
 
             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-6">
               <div
                 className="h-full bg-blue-600 rounded-full transition-all duration-1000"
-                style={{ width: `${Math.min(100, dailyAssetUtilization)}%` }}
+                style={{ width: `${Math.min(100, dailyBatteryAdequacy)}%` }}
               ></div>
             </div>
 
@@ -112,16 +112,16 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({
         </div>
       </div>
 
-      {/* Bottom - Charging Interval Signal */}
+      {/* Bottom - Charging Frequency Signal */}
       <div className="bg-white rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-lg shadow-slate-200/20 border border-slate-100 shrink-0">
         <div className="inline-block bg-slate-900 text-white text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-widest mb-4">
-          Charging Interval Signal
+          Charging Frequency Signal
         </div>
 
         <div className="text-[9px] font-bold text-slate-500 uppercase tracking-tight mb-4">Time-Efficiency Modulation</div>
 
         <div className="text-4xl sm:text-6xl font-black text-slate-900 mb-4">
-          Every <span className="text-emerald-600">{interval}</span> Days
+          Every <span className="text-emerald-600">{chargingFrequency}</span> Days
         </div>
 
         <p className="text-sm text-slate-600 mb-6 leading-relaxed">

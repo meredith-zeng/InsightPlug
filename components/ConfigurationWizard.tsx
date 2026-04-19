@@ -54,35 +54,28 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
               <h1 className="text-3xl font-black text-slate-900 leading-tight mb-2">InsightPlug</h1>
               <p className="text-sm text-slate-600 mb-6">See how much time and money an EV actually saves you based on your daily routine</p>
 
-              {/* Simple benefit icons */}
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">💰</span>
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-emerald-200 bg-white/70 backdrop-blur-sm p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+                    <span className="text-[11px] font-black text-emerald-700 uppercase tracking-[0.25em]">Personalization</span>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm">See Your Real Savings</h3>
-                    <p className="text-xs text-slate-600">Monthly fuel costs compared to gas</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">⚡</span>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Forget the Gas Station!</h3>
-                    <p className="text-xs text-slate-600">Charge at home overnight while you sleep</p>
+                  <div className="flex items-baseline gap-3 pl-3">
+                    <span className="text-lg font-black text-slate-900">Results</span>
+                    <span className="text-slate-300 font-light">+</span>
+                    <span className="text-lg font-black text-slate-900">Explanation</span>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">📍</span>
+                <div className="rounded-2xl border border-emerald-200 bg-white/70 backdrop-blur-sm p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+                    <span className="text-[11px] font-black text-emerald-700 uppercase tracking-[0.25em]">Minimization</span>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Your Local Area</h3>
-                    <p className="text-xs text-slate-600">Based on your state's electricity rates</p>
+                  <div className="flex items-baseline gap-3 pl-3">
+                    <span className="text-lg font-black text-slate-900">Input</span>
+                    <span className="text-slate-300 font-light">+</span>
+                    <span className="text-lg font-black text-slate-900">Output</span>
                   </div>
                 </div>
               </div>
@@ -251,17 +244,17 @@ const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({ profile, setP
                 </div>
 
                 <div className="border-l-4 border-blue-500 pl-4">
-                  <h4 className="font-semibold text-slate-900 mb-1">🔋 Daily Battery Usage (DAU)</h4>
+                  <h4 className="font-semibold text-slate-900 mb-1">🔋 Daily Battery Adequacy (DBA)</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
-                    DAU = min(100%, (daily miles ÷ EPA range) × 100%)
+                    DBA = min(100%, (daily miles ÷ EPA range) × 100%)
                   </div>
-                  <p className="text-xs text-slate-500">Capped at 100% — if your daily miles exceed EPA range, you need multiple charges per day. Low DAU means the vehicle is over-provisioned.</p>
+                  <p className="text-xs text-slate-500">Capped at 100% — if your daily miles exceed EPA range, you need multiple charges per day. Low DBA means the vehicle is over-provisioned.</p>
                 </div>
 
                 <div className="border-l-4 border-purple-500 pl-4">
-                  <h4 className="font-semibold text-slate-900 mb-1">⏱️ Charging Interval</h4>
+                  <h4 className="font-semibold text-slate-900 mb-1">⏱️ Charging Frequency</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
-                    Interval = max(1, floor(EPA range ÷ daily miles)) days
+                    Frequency = max(1, floor(EPA range ÷ daily miles)) days
                   </div>
                   <p className="text-xs text-slate-500">Estimated days between home charges at your driving pace. Minimum 1 day.</p>
                 </div>

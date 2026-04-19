@@ -1,9 +1,9 @@
 import { UserProfile } from '../types';
 
 type ExpertMetrics = {
-  interval?: number;
-  monthlySurplus?: number;
-  dailyAssetUtilization?: number;
+  chargingFrequency?: number;
+  monthlyFuelSavings?: number;
+  dailyBatteryAdequacy?: number;
 };
 
 /**

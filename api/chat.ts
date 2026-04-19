@@ -28,9 +28,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 The Money dimension addresses the budget constraint by analyzing both the flow of liquidity and the utilization of capital. InsightPlug decomposes Total Cost of Ownership (TCO) into two psychologically actionable signals:
 
-1. **Monthly Surplus** - Counteracts temporal discounting by reframing long-term savings as immediate disposable income. By translating abstract lifetime gains into tangible monthly liquidity (e.g., $40/month vs. $5,000/10-years), the system makes the economic benefit psychologically present.
+1. **Monthly Fuel Savings** - Counteracts temporal discounting by reframing long-term savings as immediate disposable income. By translating abstract lifetime gains into tangible monthly liquidity (e.g., $40/month vs. $5,000/10-years), the system makes the economic benefit psychologically present.
 
-2. **Daily Asset Utilization (DAU)** - Captures the allocative efficiency of capital by visualizing the share of battery capacity actually consumed by a user's daily mobility needs (e.g., "11% utilized"). Persistently low utilization indicates an inefficient allocation of monetary resources, where additional capital investment yields negligible marginal benefit.
+2. **Daily Battery Adequacy (DBA)** - Captures the allocative efficiency of capital by visualizing the share of battery capacity actually consumed by a user's daily mobility needs (e.g., "11% utilized"). Persistently low utilization indicates an inefficient allocation of monetary resources, where additional capital investment yields negligible marginal benefit.
 
 **USER CONTEXT:**
 - Region: ${profile.region?.name}, ${profile.region?.state}
@@ -40,9 +40,9 @@ The Money dimension addresses the budget constraint by analyzing both the flow o
 - Gas vehicle benchmark: ${profile.ev?.iceBenchmark?.model || 'Comparable ICE'} (${profile.iceMpg} MPG)
 
 **ECONOMIC SIGNALS (calculated for this user):**
-- Monthly Surplus: $${metrics.monthlySurplus}/month (immediate disposable income gain)
-- Daily Asset Utilization: ${metrics.dailyAssetUtilization?.toFixed(1)}% (capital efficiency metric)
-- Charging Interval: Every ${metrics.interval} days (time cost reduction)
+- Monthly Fuel Savings: $${metrics.monthlyFuelSavings}/month (immediate disposable income gain)
+- Daily Battery Adequacy: ${metrics.dailyBatteryAdequacy?.toFixed(1)}% (capital efficiency metric)
+- Charging Frequency: Every ${metrics.chargingFrequency} days (time cost reduction)
 
 **YOUR ROLE:**
 1. Explain trade-offs through Money and Time dimensions (Becker's framework)

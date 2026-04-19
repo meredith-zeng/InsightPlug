@@ -41,26 +41,26 @@ efficientCost = (dailyMiles × 30.4 / evEfficiency) × blendedRate
 - `homeChargingRatio` — user-configured fraction of charging done at home (0–1)
 - `evEfficiency` — EV efficiency in miles/kWh, default 3.8 mi/kWh for modern EVs
 
-### 3. Monthly Surplus
+### 3. Monthly Fuel Savings
 
 ```
-monthlySurplus = legacyCost - efficientCost
+monthlyFuelSavings = legacyCost - efficientCost
 ```
 
-Positive = EV saves money each month vs. gas. Negative = EV costs more to operate.
+Positive = EV saves money each month vs. gas (fuel/energy cost only — excludes depreciation, maintenance, insurance). Negative = EV costs more to operate.
 
-### 4. Daily Asset Utilization (DAU)
-
-```
-dailyAssetUtilization = (dailyMiles / epaRange) × 100    [capped at 100%]
-```
-
-Measures what fraction of the battery's EPA range is actually consumed per day. Low DAU (e.g. 10%) indicates the selected EV is over-provisioned for the user's daily needs.
-
-### 5. Charging Interval
+### 4. Daily Battery Adequacy (DBA)
 
 ```
-interval = floor(epaRange / dailyMiles)    [minimum 1 day]
+dailyBatteryAdequacy = (dailyMiles / epaRange) × 100    [capped at 100%]
+```
+
+Measures what fraction of the battery's EPA range is actually consumed per day. Low DBA (e.g. 10%) indicates the selected EV is over-provisioned for the user's daily needs.
+
+### 5. Charging Frequency
+
+```
+chargingFrequency = floor(epaRange / dailyMiles)    [minimum 1 day]
 ```
 
 Estimated number of days between home charges at the user's driving pace.
@@ -233,7 +233,7 @@ Each county uses its Replica per-capita daily miles figure directly.
 ConfigurationWizard   →   SimulationLab
   (user profile)            ├── calculateMetrics (formulas above)
                             ├── ResultsPanel (visualizations)
-                            ├── Charging Interval card
+                            ├── Charging Frequency card
                             └── AI chat → POST /api/chat → OpenAI GPT-4o-mini
 ```
 
