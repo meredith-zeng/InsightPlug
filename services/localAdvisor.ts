@@ -2,9 +2,9 @@ import { UserProfile, AISummary, CostDataPoint } from '../types';
 import { ELECTRICITY_RATES, PUBLIC_CHARGING_US_AVG } from './dataCatalog';
 
 type ExpertMetrics = {
-  interval?: number;
-  monthlySurplus?: number;
-  dailyAssetUtilization?: number;
+  chargingFrequency?: number;
+  monthlyFuelSavings?: number;
+  dailyBatteryAdequacy?: number;
 };
 
 const normalize = (input: string) => input.toLowerCase();
@@ -30,8 +30,8 @@ const estimateBreakEvenYears = (profile: UserProfile, monthlySavings: number) =>
 
 export const buildAssistantReply = (profile: UserProfile, input: string) => {
   const intent = normalize(input);
-  const dailyUtilization = (profile.dailyMiles / profile.ev.epaRange) * 100;
-  const chargingInterval = Math.max(1, Math.floor(profile.ev.epaRange / profile.dailyMiles));
+  const batteryAdequacy = (profile.dailyMiles / profile.ev.epaRange) * 100;
+  const chargingFrequency = Math.max(1, Math.floor(profile.ev.epaRange / profile.dailyMiles));
   const monthlySavings = estimateMonthlySavings(profile);
   const breakEvenYears = estimateBreakEvenYears(profile, monthlySavings);
 
@@ -41,11 +41,11 @@ export const buildAssistantReply = (profile: UserProfile, input: string) => {
 
   if (/(charging|charge|home)/.test(intent)) {
     const homeShare = Math.round(profile.homeChargingRatio * 100);
-    return `With about ${homeShare}% home charging, you would refuel roughly every ${chargingInterval} days based on your current driving.`;
+    return `With about ${homeShare}% home charging, you would refuel roughly every ${chargingFrequency} days based on your current driving.`;
   }
 
-  if (/(range|utilization)/.test(intent)) {
-    return `Your selected EV range is ${profile.ev.epaRange} miles. Daily use is about ${dailyUtilization.toFixed(1)}% of that capacity.`;
+  if (/(range|utilization|adequacy)/.test(intent)) {
+    return `Your selected EV range is ${profile.ev.epaRange} miles. Daily use is about ${batteryAdequacy.toFixed(1)}% of that capacity.`;
   }
 
   if (/(savings|cost|payback|break even|breakeven)/.test(intent)) {
@@ -63,34 +63,34 @@ export const buildAssistantReply = (profile: UserProfile, input: string) => {
 
 export const buildExpertReply = (profile: UserProfile, metrics: ExpertMetrics, input: string) => {
   const intent = normalize(input);
-  const interval = metrics.interval ?? Math.max(1, Math.floor(profile.ev.epaRange / profile.dailyMiles));
-  const utilization = metrics.dailyAssetUtilization ?? (profile.dailyMiles / profile.ev.epaRange) * 100;
-  const monthlySurplus = metrics.monthlySurplus ?? estimateMonthlySavings(profile);
+  const chargingFrequency = metrics.chargingFrequency ?? Math.max(1, Math.floor(profile.ev.epaRange / profile.dailyMiles));
+  const batteryAdequacy = metrics.dailyBatteryAdequacy ?? (profile.dailyMiles / profile.ev.epaRange) * 100;
+  const monthlyFuelSavings = metrics.monthlyFuelSavings ?? estimateMonthlySavings(profile);
 
   if (/(savings|cost|payback|break even|breakeven)/.test(intent)) {
-    const deltaLine = monthlySurplus >= 0
-      ? `Monthly surplus is around ${toCurrency(monthlySurplus)}.`
-      : `Monthly deficit is around ${toCurrency(Math.abs(monthlySurplus))}.`;
+    const deltaLine = monthlyFuelSavings >= 0
+      ? `Monthly fuel savings are around ${toCurrency(monthlyFuelSavings)}.`
+      : `Monthly fuel cost is higher by around ${toCurrency(Math.abs(monthlyFuelSavings))}.`;
     return `${deltaLine} Overuse is not required; the key is how often you refuel and the blended energy rate.`;
   }
 
   if (/(charging|charge|home)/.test(intent)) {
-    return `You can refuel about every ${interval} days at your current driving pace. A higher home charging share improves the cash flow signal.`;
+    return `You can refuel about every ${chargingFrequency} days at your current driving pace. A higher home charging share improves the cash flow signal.`;
   }
 
-  if (/(range|utilization)/.test(intent)) {
-    return `Daily utilization is about ${utilization.toFixed(1)}% of your EPA range (${profile.ev.epaRange} miles), so range buffer is healthy.`;
+  if (/(range|utilization|adequacy)/.test(intent)) {
+    return `Daily battery adequacy is about ${batteryAdequacy.toFixed(1)}% of your EPA range (${profile.ev.epaRange} miles), so range buffer is healthy.`;
   }
 
-  return `I can explain the cash-flow signal, charging interval, or utilization trade-offs if you specify a focus.`;
+  return `I can explain monthly fuel savings, charging frequency, or battery adequacy trade-offs if you specify a focus.`;
 };
 
 export const buildLocalSummary = (profile: UserProfile, data: CostDataPoint[]): AISummary => {
   const lastPoint = data[data.length - 1];
   const breakEven = data.find(point => point.savings >= 0 && point.year >= 0)?.year ?? profile.ownershipYears;
   const monthlySavings = estimateMonthlySavings(profile);
-  const dailyUtilization = (profile.dailyMiles / profile.ev.epaRange) * 100;
-  const chargingInterval = Math.max(1, Math.floor(profile.ev.epaRange / profile.dailyMiles));
+  const batteryAdequacy = (profile.dailyMiles / profile.ev.epaRange) * 100;
+  const chargingFrequency = Math.max(1, Math.floor(profile.ev.epaRange / profile.dailyMiles));
   const totalSavings = Math.max(0, lastPoint.savings);
 
   const recommendation = lastPoint.savings >= 0
@@ -101,9 +101,9 @@ export const buildLocalSummary = (profile: UserProfile, data: CostDataPoint[]): 
     totalSavings,
     breakEvenYear: breakEven,
     keyInsights: [
-      `Daily utilization is about ${dailyUtilization.toFixed(1)}% of range, leaving buffer for variability.`,
-      `Charging interval is roughly every ${chargingInterval} days at current usage.`,
-      `Estimated monthly operating delta is ${toCurrency(monthlySavings)}.`
+      `Daily battery adequacy is about ${batteryAdequacy.toFixed(1)}% of range, leaving buffer for variability.`,
+      `Charging frequency is roughly every ${chargingFrequency} days at current usage.`,
+      `Estimated monthly fuel savings are ${toCurrency(monthlySavings)}.`
     ],
     recommendation
   };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 interface TheoryExplainerProps {
-  signal: 'surplus' | 'dau' | 'charging' | 'framework';
+  signal: 'savings' | 'adequacy' | 'charging' | 'framework';
 }
 
 const TheoryExplainer: React.FC<TheoryExplainerProps> = ({ signal }) => {
@@ -22,8 +22,8 @@ const TheoryExplainer: React.FC<TheoryExplainerProps> = ({ signal }) => {
       color: "bg-slate-50 border-slate-200",
       accentColor: "text-slate-700"
     },
-    surplus: {
-      title: "Monthly Surplus",
+    savings: {
+      title: "Monthly Fuel Savings",
       subtitle: "Temporal Discounting",
       icon: "💵",
       keyMessage: "Reframe savings as immediate monthly gains",
@@ -35,8 +35,8 @@ const TheoryExplainer: React.FC<TheoryExplainerProps> = ({ signal }) => {
       color: "bg-emerald-50 border-emerald-200",
       accentColor: "text-emerald-700"
     },
-    dau: {
-      title: "Daily Asset Utilization",
+    adequacy: {
+      title: "Daily Battery Adequacy",
       subtitle: "Capital Efficiency",
       icon: "📊",
       keyMessage: "Reveal battery over-provisioning",
@@ -49,7 +49,7 @@ const TheoryExplainer: React.FC<TheoryExplainerProps> = ({ signal }) => {
       accentColor: "text-blue-700"
     },
     charging: {
-      title: "Charging Interval",
+      title: "Charging Frequency",
       subtitle: "Time Cost Reduction",
       icon: "⚡",
       keyMessage: "Quantify avoided refueling labor",

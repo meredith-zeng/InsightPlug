@@ -33,37 +33,37 @@ const SimulationLab: React.FC<{ profile: UserProfile, setProfile: (p: UserProfil
     const blendedEvRate = (profile.homeChargingRatio * homeRate) + ((1 - profile.homeChargingRatio) * publicRate);
     const efficientCost = Math.round((milesPerMonth / profile.evEfficiency) * blendedEvRate);
 
-    const monthlySurplus = legacyCost - efficientCost;
-    const dailyAssetUtilization = (profile.dailyMiles / profile.ev.epaRange) * 100;
-    const interval = Math.floor(profile.ev.epaRange / profile.dailyMiles);
+    const monthlyFuelSavings = legacyCost - efficientCost;
+    const dailyBatteryAdequacy = (profile.dailyMiles / profile.ev.epaRange) * 100;
+    const chargingFrequency = Math.floor(profile.ev.epaRange / profile.dailyMiles);
 
     return {
       legacyCost,
       efficientCost,
-      monthlySurplus,
-      dailyAssetUtilization: Math.min(100, dailyAssetUtilization),
-      interval: Math.max(1, interval),
+      monthlyFuelSavings,
+      dailyBatteryAdequacy: Math.min(100, dailyBatteryAdequacy),
+      chargingFrequency: Math.max(1, chargingFrequency),
     };
   }, [profile]);
 
   useEffect(() => {
-    const { interval, monthlySurplus, dailyAssetUtilization } = calculateMetrics;
-    const absMonthly = Math.abs(monthlySurplus);
+    const { chargingFrequency, monthlyFuelSavings, dailyBatteryAdequacy } = calculateMetrics;
+    const absMonthly = Math.abs(monthlyFuelSavings);
     const years = profile.ownershipYears;
     const totalDelta = absMonthly * 12 * years;
 
-    const intervalLabel = interval === 1 ? 'every day' : `once every **${interval} days**`;
+    const chargingFrequencyLabel = chargingFrequency === 1 ? 'every day' : `once every **${chargingFrequency} days**`;
     const headroomNote =
-      interval >= 4
+      chargingFrequency >= 4
         ? "That's plenty of headroom for unplanned trips or weekend drives."
-        : interval >= 2
+        : chargingFrequency >= 2
           ? 'Comfortable margin for most days; longer trips still need planning.'
           : "That's near-daily charging — tight margin if you have a longer day.";
 
     let savingsLine: string;
-    if (monthlySurplus > 0) {
+    if (monthlyFuelSavings > 0) {
       savingsLine = `💰 **Monthly fuel delta:** you'd save about **$${absMonthly}/month** on fuel vs. a ${profile.iceMpg}-MPG gas car — roughly **$${totalDelta.toLocaleString()} over ${years} years** in operating costs alone.`;
-    } else if (monthlySurplus < 0) {
+    } else if (monthlyFuelSavings < 0) {
       savingsLine = `💰 **Monthly fuel delta:** at today's prices, the EV would cost about **$${absMonthly}/month more** to fuel than a ${profile.iceMpg}-MPG gas car — roughly **$${totalDelta.toLocaleString()} extra over ${years} years**. Usually this flips once you raise home-charging share or if gas prices rise.`;
     } else {
       savingsLine = `💰 **Monthly fuel delta:** about break-even vs. a ${profile.iceMpg}-MPG gas car at today's prices.`;
@@ -74,7 +74,7 @@ Hi! I'm your EV economics assistant. I've already run the headline numbers for y
 
 Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.name}, ${profile.region.state}**, with an EV rated for **${profile.ev.epaRange} mi** of range:
 
-- 🔋 **Charging cadence:** roughly ${intervalLabel} at home, using **~${dailyAssetUtilization.toFixed(1)}%** of the battery per day. ${headroomNote}
+- 🔋 **Charging cadence:** roughly ${chargingFrequencyLabel} at home, using **~${dailyBatteryAdequacy.toFixed(1)}%** of the battery per day. ${headroomNote}
 - ${savingsLine}
 
 ---
@@ -278,48 +278,48 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
 
             {/* Recommendation Banner */}
             {(() => {
-              const isHighSavings = calculateMetrics.monthlySurplus >= 50;
-              const isGoodUtilization = calculateMetrics.dailyAssetUtilization < 50;
-              const isEasyCharging = calculateMetrics.interval >= 5;
+              const isHighSavings = calculateMetrics.monthlyFuelSavings >= 50;
+              const isGoodUtilization = calculateMetrics.dailyBatteryAdequacy < 50;
+              const isEasyCharging = calculateMetrics.chargingFrequency >= 5;
               const overallGood = (isHighSavings && isGoodUtilization) || (isHighSavings && isEasyCharging);
 
               return (
                 <div className={`rounded-2xl p-6 border-2 ${
                   overallGood 
                     ? 'bg-emerald-50 border-emerald-200' 
-                    : calculateMetrics.monthlySurplus > 0 
+                    : calculateMetrics.monthlyFuelSavings > 0 
                       ? 'bg-blue-50 border-blue-200' 
                       : 'bg-orange-50 border-orange-200'
                 }`}>
                   <div className="flex items-start gap-4">
                     <div className="text-4xl">
-                      {overallGood ? '✅' : calculateMetrics.monthlySurplus > 0 ? '💡' : '⚠️'}
+                      {overallGood ? '✅' : calculateMetrics.monthlyFuelSavings > 0 ? '💡' : '⚠️'}
                     </div>
                     <div className="flex-1">
                       <h3 className={`text-xl font-bold mb-2 ${
                         overallGood 
                           ? 'text-emerald-900' 
-                          : calculateMetrics.monthlySurplus > 0 
+                          : calculateMetrics.monthlyFuelSavings > 0 
                             ? 'text-blue-900' 
                             : 'text-orange-900'
                       }`}>
                         {overallGood
                           ? `An Electric Vehicle is a highly cost-effective choice for your routine!`
-                          : calculateMetrics.monthlySurplus > 0
+                          : calculateMetrics.monthlyFuelSavings > 0
                             ? `An Electric Vehicle could work well for you with some planning`
                             : 'Electric vehicles may be challenging for your current situation'}
                       </h3>
                       <p className={`text-sm ${
                         overallGood 
                           ? 'text-emerald-700' 
-                          : calculateMetrics.monthlySurplus > 0 
+                          : calculateMetrics.monthlyFuelSavings > 0 
                             ? 'text-blue-700' 
                             : 'text-orange-700'
                       }`}>
                         {overallGood
-                          ? `You'll save ${formatSignedCurrency(calculateMetrics.monthlySurplus).replace('+', '')}/month and only need to charge every ${calculateMetrics.interval} days. Your daily ${profile.dailyMiles.toFixed(0)}-mile routine is perfect for EV ownership.`
-                          : calculateMetrics.monthlySurplus > 0
-                            ? `You'll save ${formatSignedCurrency(calculateMetrics.monthlySurplus).replace('+', '')}/month.${calculateMetrics.dailyAssetUtilization > 70 ? ' You may need to charge frequently.' : ''}`
+                          ? `You'll save ${formatSignedCurrency(calculateMetrics.monthlyFuelSavings).replace('+', '')}/month and only need to charge every ${calculateMetrics.chargingFrequency} days. Your daily ${profile.dailyMiles.toFixed(0)}-mile routine is perfect for EV ownership.`
+                          : calculateMetrics.monthlyFuelSavings > 0
+                            ? `You'll save ${formatSignedCurrency(calculateMetrics.monthlyFuelSavings).replace('+', '')}/month.${calculateMetrics.dailyBatteryAdequacy > 70 ? ' You may need to charge frequently.' : ''}`
                             : `Based on your ${profile.dailyMiles.toFixed(0)}-mile daily routine and local electricity rates, a gas vehicle may currently be more economical. Electricity costs $${calculateMetrics.efficientCost}/mo vs gas at $${calculateMetrics.legacyCost}/mo.`}
                       </p>
                     </div>
@@ -335,21 +335,21 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
                 <p className="text-sm text-gray-600 mt-1">Budget & Capital Efficiency</p>
               </div>
 
-              {/* Two Signal Cards: Monthly Surplus & Daily Asset Utilization */}
+              {/* Two Signal Cards: Monthly Fuel Savings & Daily Battery Adequacy */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                {/* Card A: Monthly Surplus */}
+                {/* Card A: Monthly Fuel Savings */}
                 <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col">
                   {/* Header */}
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Monthly Surplus</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Monthly Fuel Savings</h3>
                   </div>
 
                   {/* Primary Metric */}
                   <div className="mb-4">
                     <div className="flex items-baseline gap-1">
-                      <span className={`text-5xl font-bold ${calculateMetrics.monthlySurplus >= 0 ? 'text-emerald-600' : 'text-orange-600'}`}>
-                        {formatSignedCurrency(calculateMetrics.monthlySurplus)}
+                      <span className={`text-5xl font-bold ${calculateMetrics.monthlyFuelSavings >= 0 ? 'text-emerald-600' : 'text-orange-600'}`}>
+                        {formatSignedCurrency(calculateMetrics.monthlyFuelSavings)}
                       </span>
                       <span className="text-lg font-medium text-gray-500">/mo</span>
                     </div>
@@ -385,27 +385,27 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
                   </div>
                 </div>
 
-                {/* Card B: Daily Asset Utilization */}
+                {/* Card B: Daily Battery Adequacy */}
                 <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col">
                   {/* Header */}
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Daily Battery Usage</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Daily Battery Adequacy</h3>
                   </div>
 
                   {/* Primary Metric with Status Badge */}
                   <div className="mb-4">
                     <div className="flex items-start gap-3 flex-wrap">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-5xl font-bold text-gray-900">{calculateMetrics.dailyAssetUtilization.toFixed(1)}</span>
+                        <span className="text-5xl font-bold text-gray-900">{calculateMetrics.dailyBatteryAdequacy.toFixed(1)}</span>
                         <span className="text-lg font-medium text-gray-500">%</span>
                       </div>
-                      {calculateMetrics.dailyAssetUtilization < 30 && (
+                      {calculateMetrics.dailyBatteryAdequacy < 30 && (
                         <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full self-center">✓ Excellent range buffer</span>
                       )}
-                      {calculateMetrics.dailyAssetUtilization >= 30 && calculateMetrics.dailyAssetUtilization < 70 && (
+                      {calculateMetrics.dailyBatteryAdequacy >= 30 && calculateMetrics.dailyBatteryAdequacy < 70 && (
                         <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full self-center">✓ Well balanced</span>
                       )}
-                      {calculateMetrics.dailyAssetUtilization >= 70 && (
+                      {calculateMetrics.dailyBatteryAdequacy >= 70 && (
                         <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full self-center">⚠ May need frequent charging</span>
                       )}
                     </div>
@@ -414,7 +414,7 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
                   {/* Context Explanation */}
                   <div className="mb-6">
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      You use {calculateMetrics.dailyAssetUtilization.toFixed(1)}% of battery per day, leaving plenty of range for unexpected trips.
+                      You use {calculateMetrics.dailyBatteryAdequacy.toFixed(1)}% of battery per day, leaving plenty of range for unexpected trips.
                     </p>
                   </div>
 
@@ -426,7 +426,7 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
                         <span className="text-sm font-semibold text-emerald-600">{profile.dailyMiles.toFixed(1)} mi</span>
                       </div>
                       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-600" style={{width: `${Math.min(100, calculateMetrics.dailyAssetUtilization)}%`}}></div>
+                        <div className="h-full bg-emerald-600" style={{width: `${Math.min(100, calculateMetrics.dailyBatteryAdequacy)}%`}}></div>
                       </div>
                     </div>
                     <div className="text-xs text-gray-600">
@@ -444,14 +444,14 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
                 <p className="text-sm text-gray-600 mt-1">Labor & Access Cost Reduction</p>
               </div>
 
-              {/* Charging Interval + Map — side by side */}
+              {/* Charging Frequency + Map — side by side */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                {/* Card: Charging Interval */}
+                {/* Card: Charging Frequency */}
                 <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col">
                   {/* Header */}
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Charging Interval</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Charging Frequency</h3>
                   </div>
 
                   {/* Primary Metric */}
@@ -460,7 +460,7 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
                       <span className="text-5xl font-bold text-gray-900">Every</span>
                     </div>
                     <div className="flex items-baseline gap-1 mt-2">
-                      <span className="text-6xl font-bold text-blue-600">{calculateMetrics.interval}</span>
+                      <span className="text-6xl font-bold text-blue-600">{calculateMetrics.chargingFrequency}</span>
                       <span className="text-lg font-medium text-gray-500">days</span>
                     </div>
                   </div>
@@ -476,7 +476,7 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
                   <div className="mb-6">
                     <div className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
                       <Icons.Zap className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-semibold text-blue-700">{Math.round(30 / calculateMetrics.interval)} charges/month</span>
+                      <span className="text-sm font-semibold text-blue-700">{Math.round(30 / calculateMetrics.chargingFrequency)} charges/month</span>
                     </div>
                   </div>
 
@@ -491,7 +491,7 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
                   <div className="mb-4">
                     <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
                       <Icons.MapPin className="w-5 h-5 text-gray-500" />
-                      Nearby Charging Stations
+                      Charging Stations Availability
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">Charging stations available in {profile.region.name}, {profile.region.state}</p>
                   </div>
@@ -640,17 +640,17 @@ Driving about **${profile.dailyMiles.toFixed(1)} mi/day** in **${profile.region.
                 </div>
 
                 <div className="border-l-4 border-blue-500 pl-4">
-                  <h4 className="font-semibold text-slate-900 mb-1">🔋 Daily Battery Usage (DAU)</h4>
+                  <h4 className="font-semibold text-slate-900 mb-1">🔋 Daily Battery Adequacy (DBA)</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
-                    DAU = min(100%, (daily miles ÷ EPA range) × 100%)
+                    DBA = min(100%, (daily miles ÷ EPA range) × 100%)
                   </div>
-                  <p className="text-xs text-slate-500">Capped at 100% — if your daily miles exceed EPA range, you need multiple charges per day. Low DAU means the vehicle is over-provisioned.</p>
+                  <p className="text-xs text-slate-500">Capped at 100% — if your daily miles exceed EPA range, you need multiple charges per day. Low DBA means the vehicle is over-provisioned.</p>
                 </div>
 
                 <div className="border-l-4 border-purple-500 pl-4">
-                  <h4 className="font-semibold text-slate-900 mb-1">⏱️ Charging Interval</h4>
+                  <h4 className="font-semibold text-slate-900 mb-1">⏱️ Charging Frequency</h4>
                   <div className="bg-slate-50 rounded p-2 font-mono text-xs text-slate-700 mb-1">
-                    Interval = max(1, floor(EPA range ÷ daily miles)) days
+                    Frequency = max(1, floor(EPA range ÷ daily miles)) days
                   </div>
                   <p className="text-xs text-slate-500">Estimated days between home charges at your driving pace. Minimum 1 day.</p>
                 </div>
